@@ -1,0 +1,39 @@
+jooq {
+    postgres(sourceSets.main) {
+        jdbc {
+            driver = 'org.postgresql.Driver'
+            url = 'jdbc:postgresql://localhost:5432/vote'
+            user = 'vote'
+            password = 'vote'
+        }
+        generator {
+            name = 'org.jooq.codegen.DefaultGenerator'
+            strategy {
+                name = 'org.jooq.codegen.DefaultGeneratorStrategy'
+            }
+            database {
+                name = 'org.jooq.meta.postgres.PostgresDatabase'
+                inputSchema = 'public'
+                forcedTypes {
+                    forcedType {
+                        userType = 'java.lang.String'
+                        binding = 'vote.db.jooq.PostgresJSONBinding'
+                        expression = '.*'
+                        types = 'JSONB?'
+                    }
+                }
+                includes = "poll|response"
+            }
+            generate {
+                relations = true
+                deprecated = false
+                records = true
+                //immutablePojos = true
+                fluentSetters = false
+            }
+            target {
+                packageName = 'vote.db.jooq'
+            }
+        }
+    }
+}

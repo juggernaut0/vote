@@ -1,0 +1,3 @@
+label:not(.form-check-label) {
+    width: 100%;
+}

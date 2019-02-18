@@ -1,2 +1,2 @@
-include("service", "ui")
+include("dbmigrate", "service", "ui")
 rootProject.name = "vote"

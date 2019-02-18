@@ -18,8 +18,9 @@ dependencies {
     compile(project(":"))
 
     compile(kotlin("stdlib-js"))
+    compile("org.jetbrains.kotlinx:kotlinx-coroutines-core-js:1.1.1")
 
-    compile("com.github.juggernaut0.kui:kui:0.2.1")
+    compile("com.github.juggernaut0.kui:kui:0.2.2")
 }
 
 tasks.withType<Kotlin2JsCompile>().forEach {
