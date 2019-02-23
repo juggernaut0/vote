@@ -36,7 +36,7 @@ fun main() {
             when (p) {
                 Page.SIGNIN -> SignInPage(signIn, router, initPage)
                 Page.CREATE -> CreatePage(service)
-                Page.VOTE -> VotePage(service, signIn)
+                Page.VOTE -> VotePage(service)
                 Page.RESULTS -> ResultsPage(service)
             }
         })

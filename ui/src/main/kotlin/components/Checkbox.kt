@@ -2,8 +2,8 @@ package components
 
 import kui.*
 
-class Checkbox(private val id: String, private val label: String) : Component() {
-    var selected: Boolean by renderOnSet(false)
+class Checkbox(private val id: String, private val label: String, selected: Boolean = false) : Component() {
+    var selected: Boolean by renderOnSet(selected)
 
     override fun render() {
         markup().div(classes("form-check")) {

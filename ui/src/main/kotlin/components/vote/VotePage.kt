@@ -3,14 +3,12 @@ package components.vote
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kui.*
-import services.GoogleSignIn
 import services.VoteService
 import vote.api.v1.Poll
 import vote.api.v1.PollResponse
 
-class VotePage(private val service: VoteService, private val signIn: GoogleSignIn) : Component() {
+class VotePage(private val service: VoteService) : Component() {
     private var poll: Poll? = null
-    private var response: PollResponse? = null
     private var answers: List<AnswerPanel> = emptyList()
 
     private var submitting = false
@@ -22,8 +20,7 @@ class VotePage(private val service: VoteService, private val signIn: GoogleSignI
             if (p == null) notFound = true
             else {
                 poll = p
-                response = resp
-                answers = p.questions.map { q -> AnswerPanel(q) }
+                answers = p.questions.zip(resp?.responses.orNulls()).map { (q, r) -> AnswerPanel(q, r) }
             }
             render()
         }
@@ -65,5 +62,12 @@ class VotePage(private val service: VoteService, private val signIn: GoogleSignI
                 p { +"Loading poll..." }
             }
         }
+    }
+
+    private fun <T> Iterable<T>?.orNulls(): Iterable<T?> {
+        return this ?: Iterable { object : Iterator<T?> {
+            override fun hasNext(): Boolean = true
+            override fun next(): T? = null
+        } }
     }
 }

@@ -3,9 +3,7 @@ package components.vote
 import kui.*
 import vote.api.v1.Response
 
-class SelectOneAnswer(private val name: String, private val options: List<String>) : AnswerPanelInput() {
-    private var selectedIndex: Int? = null
-
+class SelectOneAnswer(private val name: String, private val options: List<String>, private var selectedIndex: Int?) : AnswerPanelInput() {
     override fun createResponse(): Response {
         val selections = selectedIndex?.let { listOf(it) } ?: emptyList()
         return Response.selections(selections)

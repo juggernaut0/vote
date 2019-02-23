@@ -3,9 +3,7 @@ package components.vote
 import kui.*
 import vote.api.v1.Response
 
-class FreeformAnswer : AnswerPanelInput() {
-    private var text: String = ""
-
+class FreeformAnswer(private var text: String) : AnswerPanelInput() {
     override fun createResponse(): Response {
         return Response.freeform(text)
     }

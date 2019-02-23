@@ -7,20 +7,20 @@ import vote.api.v1.Response
 import vote.api.v1.SelectSubtype
 import kotlin.random.Random
 
-class AnswerPanel(private val question: Question) : Component() {
+class AnswerPanel(private val question: Question, existing: Response?) : Component() {
     private val input: AnswerPanelInput = when(val t = question.type) {
         QuestionType.FREEFORM -> {
-            FreeformAnswer()
+            FreeformAnswer(existing?.freeform ?: "")
         }
         QuestionType.SELECT -> {
             if (question.subtype == SelectSubtype.SELECT_ONE) {
-                SelectOneAnswer(genName(), question.options)
+                SelectOneAnswer(genName(), question.options, existing?.selections?.getOrNull(0))
             } else {
-                SelectManyAnswer(genName(), question.options)
+                SelectManyAnswer(genName(), question.options, existing?.selections.orEmpty().toSet())
             }
         }
         QuestionType.RANKED -> {
-            RankedAnswer(question.options)
+            RankedAnswer(question.options, existing?.selections.orEmpty())
         }
         else -> throw IllegalArgumentException("Unknown type: $t")
     }

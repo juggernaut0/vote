@@ -3,8 +3,8 @@ package components.vote
 import kui.*
 import vote.api.v1.Response
 
-class RankedAnswer(private val options: List<String>) : AnswerPanelInput() {
-    private val ranked: MutableList<Int> = mutableListOf()
+class RankedAnswer(private val options: List<String>, ranked: List<Int>) : AnswerPanelInput() {
+    private val ranked: MutableList<Int> = ranked.toMutableList()
 
     override fun createResponse(): Response {
         return Response.selections(ranked)
