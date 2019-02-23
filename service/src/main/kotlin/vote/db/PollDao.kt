@@ -8,9 +8,10 @@ import vote.api.v1.Question
 import vote.api.UUID
 import vote.db.jooq.Tables.*
 import vote.db.jooq.tables.records.PollRecord
+import java.time.OffsetDateTime
 
 class PollDao(private val dsl: DSLContext) {
-    suspend fun createPoll(title: String, questions: List<Question>): UUID {
+    suspend fun createPoll(title: String, questions: List<Question>, createdBy: UUID): UUID {
         val id = UUID.randomUUID()
         dsl.newRecord(POLL)
                 .apply {
@@ -18,6 +19,8 @@ class PollDao(private val dsl: DSLContext) {
                     this.title = title
                     this.version = 1
                     this.questions = Json.stringify(Question.serializer().list, questions)
+                    this.createdBy = createdBy
+                    this.createdDt = OffsetDateTime.now()
                 }
                 .insertAsync()
                 .await()

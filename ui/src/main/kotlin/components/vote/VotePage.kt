@@ -3,11 +3,12 @@ package components.vote
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kui.*
+import services.GoogleSignIn
 import services.VoteService
 import vote.api.v1.Poll
 import vote.api.v1.PollResponse
 
-class VotePage(private val service: VoteService) : Component() {
+class VotePage(private val service: VoteService, private val signIn: GoogleSignIn) : Component() {
     private var poll: Poll? = null
     private var response: PollResponse? = null
     private var answers: List<AnswerPanel> = emptyList()

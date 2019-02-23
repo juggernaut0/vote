@@ -22,7 +22,8 @@ jooq {
                         types = 'JSONB?'
                     }
                 }
-                includes = "poll|response"
+                includes = ".*"
+                excludes = "flyway_schema_history"
             }
             generate {
                 relations = true

@@ -1,56 +1,35 @@
 package services
 
-import kotlinx.coroutines.await
-import kotlinx.serialization.DeserializationStrategy
-import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.internal.UnitSerializer
-import kotlinx.serialization.json.Json
-import org.w3c.fetch.RequestInit
-import vote.api.*
+import org.w3c.fetch.Headers
+import vote.api.UUID
 import vote.api.v1.*
 import vote.util.nullable
-import kotlin.browser.window
 
-class VoteApiClient : VoteApi {
-    private suspend fun <R> fetch(method: String, path: String, des: DeserializationStrategy<R>): R {
-        return window.fetch("/api/v1$path", RequestInit(method = method))
-                .then {
-                    if (!it.ok) throw RuntimeException("${it.status} ${it.statusText}")
-                    it.text()
-                }
-                .then { Json.parse(des, it) }
-                .await()
-    }
-
-    private suspend fun <R, T> fetch(method: String, path: String, body: T, ser: SerializationStrategy<T>, des: DeserializationStrategy<R>): R {
-        val json = Json.stringify(ser, body)
-        return window.fetch("/api/v1$path", RequestInit(method = method, body = json))
-                .then {
-                    if (!it.ok) throw RuntimeException("${it.status} ${it.statusText}")
-                    it.text()
-                }
-                .then { Json.parse(des, it) }
-                .await()
+class VoteApiClient(private val authSupplier: () -> String) : VoteApi {
+    private fun headers(): Headers {
+        return Headers().apply {
+            append("Authorization", "Bearer ${authSupplier()}")
+        }
     }
 
     override suspend fun createPoll(pollCreateRequest: PollCreateRequest): Poll {
-        return fetch("POST", "/polls", pollCreateRequest, PollCreateRequest.serializer(), Poll.serializer())
+        return fetch("POST", "/api/v1/polls", pollCreateRequest, PollCreateRequest.serializer(), Poll.serializer(), headers = headers())
     }
 
     override suspend fun getPoll(id: UUID): Poll? {
-        return fetch("GET", "/polls/$id", Poll.serializer().nullable)
+        return fetch("GET", "/api/v1/polls/$id", Poll.serializer().nullable, headers = headers())
     }
 
-    // TODO add userId
     override suspend fun getResponse(pollId: UUID): PollResponse? {
-        return fetch("GET", "/polls/$pollId/response", PollResponse.serializer().nullable)
+        return fetch("GET", "/api/v1/polls/$pollId/response", PollResponse.serializer().nullable, headers = headers())
     }
 
     override suspend fun submitResponse(pollId: UUID, response: PollResponse) {
-        return fetch("PUT", "/polls/$pollId/response", response, PollResponse.serializer(), UnitSerializer)
+        return fetch("PUT", "/api/v1/polls/$pollId/response", response, PollResponse.serializer(), UnitSerializer, headers = headers())
     }
 
     override suspend fun getResults(pollId: UUID): PollResults? {
-        return fetch("GET", "/polls/$pollId/results", PollResults.serializer().nullable)
+        return fetch("GET", "/api/v1/polls/$pollId/results", PollResults.serializer().nullable, headers = headers())
     }
 }

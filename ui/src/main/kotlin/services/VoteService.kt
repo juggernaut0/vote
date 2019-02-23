@@ -10,9 +10,9 @@ import kotlin.browser.window
 class VoteService(private val router: Router<Page>, private val api: VoteApi) {
     private fun changePage(newPage: Page, id: UUID) {
         val url = when (newPage) {
-            Page.CREATE -> ""
             Page.RESULTS -> "?results=$id"
             Page.VOTE -> "?vote=$id"
+            else -> ""
         }
         window.history.pushState(newPage.name, "", url)
         router.state = newPage

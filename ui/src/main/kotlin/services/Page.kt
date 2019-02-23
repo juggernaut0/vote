@@ -1,3 +1,3 @@
 package services
 
-enum class Page { CREATE, VOTE, RESULTS }
+enum class Page { SIGNIN, CREATE, VOTE, RESULTS }

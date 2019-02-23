@@ -17,8 +17,10 @@ dependencies {
 
     implementation(kotlin("stdlib-jdk8"))
     
-    implementation("io.ktor:ktor-server-core:1.1.2")
-    implementation("io.ktor:ktor-server-jetty:1.1.2")
+    val ktorVersion = "1.1.2"
+    implementation("io.ktor:ktor-server-core:$ktorVersion")
+    implementation("io.ktor:ktor-server-jetty:$ktorVersion")
+    implementation("io.ktor:ktor-auth:$ktorVersion")
 
     implementation("com.google.inject:guice:4.2.2:no_aop")
 
@@ -29,6 +31,8 @@ dependencies {
     implementation("org.jooq:jooq:3.11.9")
     jooqRuntime("org.postgresql:postgresql:42.2.5")
     implementation("com.zaxxer:HikariCP:3.2.0")
+
+    implementation("com.google.api-client:google-api-client:1.28.0")
 
     testImplementation(kotlin("test-junit"))
 }

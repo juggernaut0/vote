@@ -1,11 +1,11 @@
 import components.create.CreatePage
 import components.results.ResultsPage
+import components.signin.SignInPage
 import components.vote.VotePage
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import org.w3c.dom.url.URLSearchParams
-import services.Page
-import services.Router
-import services.VoteApiClient
-import services.VoteService
+import services.*
 import kotlin.browser.window
 
 fun main() {
@@ -16,15 +16,29 @@ fun main() {
         else -> Page.CREATE
     }
     window.history.replaceState(initPage.name, "")
-    val router = Router(initPage) { (it as? String)?.let { s -> Page.valueOf(s) } }
-    val api = VoteApiClient()
-    val service = VoteService(router, api)
 
-    kui.mountComponent("app", router.component { page ->
-        when (page) {
-            Page.CREATE -> CreatePage(service)
-            Page.VOTE -> VotePage(service)
-            Page.RESULTS -> ResultsPage(service)
-        }
-    })
+    GlobalScope.launch {
+        // NOTE: this will fail build if not provided
+        val clientId = gapiClientId
+
+        val signIn = GoogleSignIn(UsersApiClient())
+
+        signIn.load()
+        signIn.init(clientId, "email")
+
+        val page = if (signIn.isSignedIn()) initPage else Page.SIGNIN
+
+        val router = Router(page) { (it as? String)?.let { s -> Page.valueOf(s) } }
+        val api = VoteApiClient { signIn.getUser().getAuthResponse().id_token }
+        val service = VoteService(router, api)
+
+        kui.mountComponent("app", router.component { p ->
+            when (p) {
+                Page.SIGNIN -> SignInPage(signIn, router, initPage)
+                Page.CREATE -> CreatePage(service)
+                Page.VOTE -> VotePage(service, signIn)
+                Page.RESULTS -> ResultsPage(service)
+            }
+        })
+    }
 }

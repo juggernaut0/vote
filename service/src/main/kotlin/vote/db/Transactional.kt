@@ -1,6 +1,8 @@
 package vote.db
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import org.jooq.DSLContext
 import org.jooq.exception.DataAccessException
@@ -9,26 +11,19 @@ import org.slf4j.LoggerFactory
 import vote.config.VoteConfig
 import javax.inject.Inject
 import javax.sql.DataSource
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
-import kotlin.coroutines.suspendCoroutine
 
 class Transactional @Inject constructor(private val config: VoteConfig, private val dataSource: DataSource) {
     private suspend inline fun <T> tx(crossinline block: suspend CoroutineScope.(DSLContext) -> T): T {
-        return suspendCoroutine { cont ->
-            try {
-                dataSource.connection.use { conn ->
-                    val dsl = DSL.using(conn, config.data.sqlDialect)
-                    dsl.transactionResult { config ->
-                        runBlocking { cont.resume(block(DSL.using(config))) }
-                    }
-                }
-            } catch (dae: DataAccessException) {
-                log.warn("Caught: $dae")
-                cont.resumeWithException(dae.cause ?: dae)
-            } catch (e: Throwable) {
-                cont.resumeWithException(e)
+        return try {
+            dataSource.connection.use { conn ->
+                val dsl = DSL.using(conn, config.data.sqlDialect)
+                dsl.transactionResultAsync { config ->
+                    runBlocking(Dispatchers.IO) { block(DSL.using(config)) }
+                }.await()
             }
+        } catch (dae: DataAccessException) {
+            log.warn("Caught: $dae")
+            throw (dae.cause ?: dae)
         }
     }
 

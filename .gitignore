@@ -4,3 +4,4 @@ build
 out
 *.iml
 node_modules
+ui/src/main/kotlin/GApiClientId.kt

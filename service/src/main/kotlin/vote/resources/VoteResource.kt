@@ -1,6 +1,7 @@
 package vote.resources
 
 import io.ktor.application.call
+import io.ktor.auth.authenticate
 import io.ktor.features.BadRequestException
 import io.ktor.features.NotFoundException
 import io.ktor.routing.*
@@ -11,6 +12,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.list
 import vote.api.UUID
 import vote.api.v1.*
+import vote.auth.AuthContext
 import vote.db.DaoProvider
 import vote.db.PollDao
 import vote.db.Transactional
@@ -20,6 +22,7 @@ import vote.db.jooq.tables.records.ResponseRecord
 import vote.services.ResultsCalculator
 import vote.util.nullable
 import javax.inject.Inject
+import kotlin.coroutines.coroutineContext
 
 @KtorExperimentalAPI
 class VoteResource @Inject constructor(
@@ -29,32 +32,43 @@ class VoteResource @Inject constructor(
         private val resultsCalculator: ResultsCalculator
 ) : Resource, VoteApi {
     override fun register(rt: Route) {
-        rt.post("/polls") {
-            val body = call.receiveJson(PollCreateRequest.serializer())
-            call.respondJson(Poll.serializer(), createPoll(body))
-        }
-        rt.get("/polls/{id}") {
-            val id = call.parameters.getUUID("id")
-            call.respondJson(Poll.serializer().nullable, getPoll(id))
-        }
-        rt.get("/polls/{id}/response") {
-            val id = call.parameters.getUUID("id")
-            call.respondJson(PollResponse.serializer().nullable, getResponse(id))
-        }
-        rt.put("/polls/{id}/response") {
-            val id = call.parameters.getUUID("id")
-            val body = call.receiveJson(PollResponse.serializer())
-            call.respondJson(UnitSerializer, submitResponse(id, body))
-        }
-        rt.get("/polls/{id}/results") {
-            val id = call.parameters.getUUID("id")
-            call.respondJson(PollResults.serializer().nullable, getResults(id))
+        with (rt) {
+            authenticate {
+                post("/polls") {
+                    withAuthContext {
+                        val body = call.receiveJson(PollCreateRequest.serializer())
+                        call.respondJson(Poll.serializer(), createPoll(body))
+                    }
+                }
+                get("/polls/{id}/response") {
+                    withAuthContext {
+                        val id = call.parameters.getUUID("id")
+                        call.respondJson(PollResponse.serializer().nullable, getResponse(id))
+                    }
+                }
+                put("/polls/{id}/response") {
+                    withAuthContext {
+                        val id = call.parameters.getUUID("id")
+                        val body = call.receiveJson(PollResponse.serializer())
+                        call.respondJson(UnitSerializer, submitResponse(id, body))
+                    }
+                }
+            }
+            get("/polls/{id}") {
+                val id = call.parameters.getUUID("id")
+                call.respondJson(Poll.serializer().nullable, getPoll(id))
+            }
+            get("/polls/{id}/results") {
+                val id = call.parameters.getUUID("id")
+                call.respondJson(PollResults.serializer().nullable, getResults(id))
+            }
         }
     }
 
     override suspend fun createPoll(pollCreateRequest: PollCreateRequest): Poll {
+        val userId = coroutineContext[AuthContext]!!.userId.id
         val id = tx.withDao(pollDao) { dao ->
-            dao.createPoll(pollCreateRequest.title, pollCreateRequest.questions)
+            dao.createPoll(pollCreateRequest.title, pollCreateRequest.questions, userId)
         }
         return Poll(
                 id = id,
@@ -71,14 +85,29 @@ class VoteResource @Inject constructor(
     }
 
     override suspend fun getResponse(pollId: UUID): PollResponse? {
-        return null // TODO need users
+        val userId = coroutineContext[AuthContext]!!.userId.id
+        val resp = tx.withDao(responseDao) { dao ->
+            dao.getResponse(pollId, userId)
+        }
+        return resp?.toApi()
     }
 
     override suspend fun submitResponse(pollId: UUID, response: PollResponse) {
+        val userId = coroutineContext[AuthContext]!!.userId.id
         tx.withDaos(pollDao, responseDao) { pollDao, responseDao ->
-            val p = pollDao.getPoll(pollId)?.toApi() ?: throw NotFoundException("Poll with ID {$pollId} not found")
+            val pAsync = async { pollDao.getPoll(pollId)?.toApi() }
+            val rAsync = async { responseDao.getResponse(pollId, userId) }
+            val p = pAsync.await() ?: throw NotFoundException("Poll with ID {$pollId} not found")
+
+            // TODO more validation (extract to service?)
             if (p.questions.size != response.responses.size) throw BadRequestException("Response list does not match question list")
-            responseDao.createResponse(pollId, response)
+
+            val existing = rAsync.await()
+            if (existing == null) {
+                responseDao.createResponse(pollId, userId, response)
+            } else {
+                responseDao.updateResponse(existing.id, response)
+            }
         }
     }
 
