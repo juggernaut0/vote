@@ -33,25 +33,29 @@ class RankedAnswer(private val options: List<String>, ranked: List<Int>) : Answe
             div(classes("col-12")) {
                 p { +"Click to rank items (highest to lowest)" }
             }
-            div(classes("col-6", "list-group")) {
-                for ((i, opt) in options.withIndex()) {
-                    val disabled = i in ranked
-                    button(Props(
-                            classes = btnClass(disabled),
-                            click = { rankItem(i) },
-                            disabled = disabled
-                    )) {
-                        +opt
+            div(classes("col-6")) {
+                div(classes("list-group")) {
+                    for ((i, opt) in options.withIndex()) {
+                        val disabled = i in ranked
+                        button(Props(
+                                classes = btnClass(disabled),
+                                click = { rankItem(i) },
+                                disabled = disabled
+                        )) {
+                            +opt
+                        }
                     }
                 }
             }
-            div(classes("col-6", "list-group")) {
-                for ((i, oi) in ranked.withIndex()) {
-                    button(Props(
-                            classes = listOf("list-group-item", "list-group-item-action"),
-                            click = { unrankItem(i) }
-                    )) {
-                        +options[oi]
+            div(classes("col-6")) {
+                div(classes("list-group")) {
+                    for ((i, oi) in ranked.withIndex()) {
+                        button(Props(
+                                classes = listOf("list-group-item", "list-group-item-action"),
+                                click = { unrankItem(i) }
+                        )) {
+                            +options[oi]
+                        }
                     }
                 }
             }

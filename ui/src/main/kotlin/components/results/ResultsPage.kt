@@ -25,16 +25,22 @@ class ResultsPage(service: VoteService) : Component() {
 
     private fun MarkupBuilder.freeform(responses: List<String>) {
         ul {
-            for (s in responses) {
+            for (s in responses.sorted()) {
                 li { +s }
             }
         }
     }
 
     private fun MarkupBuilder.votes(votes: List<Pair<String, Int>>) {
-        ul {
+        val max = votes.map { it.second }.max()?.takeIf { it > 0 }?.toDouble() ?: Double.POSITIVE_INFINITY
+        div(classes("p-1")) {
             for ((opt, vs) in votes.sortedBy { -it.second }) {
-                li { +"$vs - $opt" }
+                val w = vs / max * 100
+                div(classes("border", "my-1", "text-nowrap", "overflow-hidden")) {
+                    div(Props(classes = listOf("p-2", "vote-bar"), attrs = mapOf("style" to "width: $w%;"))) {
+                        +"$vs - $opt"
+                    }
+                }
             }
         }
     }
@@ -49,6 +55,11 @@ class ResultsPage(service: VoteService) : Component() {
                     div(classes("card", "bg-light", "mb-2")) {
                         div(classes("card-body")) {
                             h5 { +q.question }
+                            small(classes("text-muted")) {
+                                val n = r.responseCount
+                                val pl = if (n == 1) "" else "s"
+                                +" $n response$pl"
+                            }
                             when (q.type) {
                                 QuestionType.FREEFORM -> freeform(r.freeform!!)
                                 else -> votes(q.options.zip(r.votes!!))

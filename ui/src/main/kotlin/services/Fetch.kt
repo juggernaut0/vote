@@ -15,7 +15,7 @@ suspend fun fetch(method: String, path: String, body: String? = undefined, heade
 }
 
 suspend fun <R> fetch(method: String, path: String, des: DeserializationStrategy<R>, headers: Headers? = undefined): R {
-    return fetch(method, path, headers = headers).let { Json.parse(des, it) }
+    return fetch(method, path, headers = headers).let { Json.nonstrict.parse(des, it) }
 }
 
 suspend fun <R, T> fetch(method: String,
@@ -24,5 +24,5 @@ suspend fun <R, T> fetch(method: String,
                          des: DeserializationStrategy<R>,
                          headers: Headers? = undefined): R {
     val json = Json.stringify(ser, body)
-    return fetch(method, path, json, headers = headers).let { Json.parse(des, it) }
+    return fetch(method, path, json, headers = headers).let { Json.nonstrict.parse(des, it) }
 }

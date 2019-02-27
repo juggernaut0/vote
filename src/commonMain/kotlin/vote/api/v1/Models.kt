@@ -67,6 +67,7 @@ data class PollResults(
 
 @Serializable
 data class Result(
+        val responseCount: Int,
         val freeform: List<String>? = null,
         val votes: List<Int>? = null
 )

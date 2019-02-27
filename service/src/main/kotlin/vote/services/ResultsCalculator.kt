@@ -14,7 +14,7 @@ class ResultsCalculator {
                 QuestionType.RANKED -> summarizeRanked(q, resps)
                 else -> {
                     log.warn("Unknown question type ${q.type}")
-                    Result()
+                    Result(0)
                 }
             }
             results.add(r)
@@ -23,28 +23,28 @@ class ResultsCalculator {
     }
 
     private fun summarizeFreeform(responses: List<Response>): Result {
-        return Result(freeform = responses.mapNotNull { it.freeform })
+        val rs = responses.mapNotNull { r -> r.freeform.takeUnless { it.isNullOrBlank() } }
+        return Result(rs.size, freeform = rs)
     }
 
     private fun summarizeSelect(question: Question, responses: List<Response>): Result {
+        val allSelections = responses.mapNotNull { r -> r.selections.takeUnless { it.isNullOrEmpty() } }
         val votes = IntArray(question.options.size) { 0 }
-        for (r in responses) {
-            for (s in r.selections ?: emptyList()) {
-                votes[s]++
-            }
+        for (s in allSelections.flatten()) {
+            votes[s]++
         }
-        return Result(votes = votes.asList())
+        return Result(allSelections.size, votes = votes.asList())
     }
 
     private fun summarizeRanked(question: Question, responses: List<Response>): Result {
         val size = question.options.size
-        if (responses.isEmpty()) return Result(votes = List(size) { 0 })
+        if (responses.isEmpty()) return Result(0, votes = List(size) { 0 })
         return when (question.subtype) {
             RankedSubtype.INSTANT_RUNOFF -> instantRunoff(size, responses)
             RankedSubtype.BORDA_COUNT -> bordaCount(size, responses)
             else -> {
                 log.warn("Unknown ranked subtype ${question.subtype}")
-                Result()
+                Result(0, votes = emptyList())
             }
         }
     }
@@ -62,7 +62,7 @@ class ResultsCalculator {
             remaining.remove(lowest)
             votes = IntArray(size) { 0 }
         }
-        return Result(votes = List(size) { i -> if (i in remaining) selections.size else 0 })
+        return Result(selections.size, votes = List(size) { i -> if (i in remaining) selections.size else 0 })
     }
 
     private fun bordaCount(size: Int, responses: List<Response>): Result {
@@ -73,7 +73,7 @@ class ResultsCalculator {
                 votes[i] += v
             }
         }
-        return Result(votes = votes.asList())
+        return Result(selections.size, votes = votes.asList())
     }
 
     companion object {

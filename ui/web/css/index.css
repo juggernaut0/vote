@@ -1,3 +1,7 @@
 label:not(.form-check-label) {
     width: 100%;
 }
+
+.vote-bar {
+    background-color: #d8edf1;
+}
