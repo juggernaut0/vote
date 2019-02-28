@@ -8,12 +8,16 @@ import vote.api.v1.Poll
 import vote.api.v1.PollResults
 import vote.api.v1.QuestionType
 
-class ResultsPage(service: VoteService) : Component() {
+class ResultsPage(private val service: VoteService) : Component() {
     private var pollResults: Pair<Poll, PollResults>? = null
 
     private var notFound = false
 
     init {
+        refresh()
+    }
+
+    private fun refresh() {
         GlobalScope.launch {
             pollResults = service.getResults()
             if (pollResults == null) {
@@ -50,7 +54,10 @@ class ResultsPage(service: VoteService) : Component() {
         markup().div {
             if (pr != null) {
                 val (poll, results) = pr
-                h3 { +"${poll.title} - Results" }
+                div(classes("d-flex", "justify-content-between")) {
+                    h3 { +"${poll.title} - Results" }
+                    button(Props(classes = listOf("close"), click = { refresh() })) { +"\u21bb" }
+                }
                 for ((q, r) in poll.questions.zip(results.results)) {
                     div(classes("card", "bg-light", "mb-2")) {
                         div(classes("card-body")) {
