@@ -1,6 +1,5 @@
 package components.create
 
-import components.create.QuestionPanel
 import kui.Component
 import kui.Props
 import kui.classes
@@ -11,7 +10,7 @@ class OptionItem(private val questionPanel: QuestionPanel) : Component() {
 
     override fun render() {
         markup().li(classes("list-group-item", "d-flex")) {
-            inputText(classes("form-control", "flex-grow-1", "w-auto"), ::text) // TODO attrs = mapOf("placeholder" to "Option...")
+            inputText(classes("form-control", "flex-grow-1", "w-auto"), placeholder = "Add Option...", model = ::text)
             button(Props(
                     classes = listOf("close", "ml-3"),
                     click = { questionPanel.removeOption(this@OptionItem) }

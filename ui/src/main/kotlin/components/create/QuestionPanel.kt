@@ -40,6 +40,11 @@ class QuestionPanel(private val createPage: CreatePage) : Component() {
                 if (type != QType.FREEFORM) {
                     label { +"Options" }
                     ul(classes("list-group", "mb-2")) {
+                        /* TODO: When an empty OptionItem has something typed in it, add a new empty one beneath it
+                         * When an empty OptionItem loses focus, remove it automatically, except if it's the last one in the list
+                         * Remove/disable X button on last OptionItem in list
+                         * Then the "Add Option" button can be removed
+                         */
                         for (opt in options) {
                             component(opt)
                         }

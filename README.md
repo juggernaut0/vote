@@ -26,6 +26,7 @@ variable set to the same value as used in the UI.
 ## TODO
 * Allow reordering questions on the create page
 * UI side graceful error handling, alert messages
+* Add missing indexes to response table
 * Add page for poll creator to remove votes
 * Add script or gradle plugin to automatically dockerize
 * Add option to show poll creators email

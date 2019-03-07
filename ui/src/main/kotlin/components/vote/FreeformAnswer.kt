@@ -9,6 +9,6 @@ class FreeformAnswer(private var text: String) : AnswerPanelInput() {
     }
 
     override fun render() {
-        markup().inputText(classes("form-control"), ::text)
+        markup().inputText(classes("form-control"), model = ::text)
     }
 }
