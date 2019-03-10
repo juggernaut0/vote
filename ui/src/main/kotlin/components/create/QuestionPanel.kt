@@ -23,42 +23,69 @@ class QuestionPanel(private val createPage: CreatePage) : Component() {
         render()
     }
 
+    private fun isFirst(): Boolean = createPage.isFirst(this)
+    private fun isLast(): Boolean = createPage.isLast(this)
+    private fun moveUp() = createPage.moveUp(this)
+    private fun moveDown() = createPage.moveDown(this)
+    private fun removeThis() = createPage.removeQuestion(this)
+
     fun createQuestion(): Question {
+        val opts = if (type == QType.FREEFORM) {
+            emptyList()
+        } else {
+            options.mapNotNull { o -> o.text.takeUnless { it.isBlank() } }
+        }
         return Question(
                 question = question,
                 type = type.type,
                 subtype = type.subtype,
-                options = if (type == QType.FREEFORM) emptyList() else options.map { it.text }
+                options = opts
         )
     }
 
     override fun render() {
         markup().div(classes("card", "bg-light", "mb-2")) {
-            div(classes("card-body")) {
-                labelledTextInput("Question", ::question)
-                labelledDropdown("Type", ::type, QType.values().asList())
-                if (type != QType.FREEFORM) {
-                    label { +"Options" }
-                    ul(classes("list-group", "mb-2")) {
-                        /* TODO: When an empty OptionItem has something typed in it, add a new empty one beneath it
-                         * When an empty OptionItem loses focus, remove it automatically, except if it's the last one in the list
-                         * Remove/disable X button on last OptionItem in list
-                         * Then the "Add Option" button can be removed
-                         */
-                        for (opt in options) {
-                            component(opt)
-                        }
-                        button(Props(
-                                classes = listOf("list-group-item", "list-group-item-action", "active", "text-center"),
-                                click = { addOption() }
-                        )) { +"Add Option" }
-                    }
+            div(classes("d-flex")) {
+                div(classes("flex-fill")) {
+                    div(classes("card-body")) {
+                        labelledTextInput("Question", ::question)
+                        labelledDropdown("Type", ::type, QType.values().asList())
+                        if (type != QType.FREEFORM) {
+                            label { +"Options" }
+                            ul(classes("list-group", "mb-2")) {
+                                /* TODO: When an empty OptionItem has something typed in it, add a new empty one beneath it
+                                 * When an empty OptionItem loses focus, remove it automatically, except if it's the last one in the list
+                                 * Remove/disable X button on last OptionItem in list
+                                 * Then the "Add Option" button can be removed
+                                 */
+                                for (opt in options) {
+                                    component(opt)
+                                }
+                                button(Props(
+                                        classes = listOf("list-group-item", "list-group-item-action", "active", "text-center"),
+                                        click = { addOption() }
+                                )) { +"Add Option" }
+                            }
 
+                        }
+                    }
                 }
-                button(Props(
-                        classes = listOf("btn", "btn-danger", "btn-block"),
-                        click = { createPage.removeQuestion(this@QuestionPanel) }
-                )) { +"Remove Question" }
+                div(classes("question-buttons", "ml-2", "border-left")) {
+                    button(Props(
+                            classes = listOf("close", "question-button"),
+                            click = { moveUp() },
+                            disabled = isFirst()
+                    )) { +"\u25B2" }
+                    button(Props(
+                            classes = listOf("close", "question-button"),
+                            click = { removeThis() }
+                    )) { +"\u00D7" }
+                    button(Props(
+                            classes = listOf("close", "question-button"),
+                            click = { moveDown() },
+                            disabled = isLast()
+                    )) { +"\u25BC" }
+                }
             }
         }
     }

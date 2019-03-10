@@ -5,3 +5,23 @@ label:not(.form-check-label) {
 .vote-bar {
     background-color: #d8edf1;
 }
+
+.question-buttons {
+    width: 3rem;
+    text-align: center;
+}
+
+.question-button {
+    display: block;
+    width: 100%;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}
+
+button.close.question-button:focus {
+    outline: 0;
+}
+
+button.close.question-button:disabled {
+    color: transparent;
+}

@@ -23,6 +23,34 @@ class CreatePage(private val service: VoteService) : Component() {
         render()
     }
 
+    fun isFirst(q: QuestionPanel): Boolean {
+        return questions.indexOf(q) == 0
+    }
+
+    fun isLast(q: QuestionPanel): Boolean {
+        return questions.indexOf(q) == questions.lastIndex
+    }
+
+    fun moveUp(q: QuestionPanel) {
+        val i = questions.indexOf(q)
+        if (i == 0) return
+        swap(i, i-1)
+        render()
+    }
+
+    fun moveDown(q: QuestionPanel) {
+        val i = questions.indexOf(q)
+        if (i == questions.lastIndex) return
+        swap(i, i+1)
+        render()
+    }
+
+    private fun swap(a: Int, b: Int) {
+        val t = questions[a]
+        questions[a] = questions[b]
+        questions[b] = t
+    }
+
     private fun createPoll() {
         submitting = true
         render()

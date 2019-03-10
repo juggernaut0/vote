@@ -24,7 +24,6 @@ In order to run the service, you must have a `GOOGLE_SIGNIN_CLIENT_ID`
 variable set to the same value as used in the UI.
 
 ## TODO
-* Allow reordering questions on the create page
 * UI side graceful error handling, alert messages
 * Add missing indexes to response table
 * Add page for poll creator to remove votes
