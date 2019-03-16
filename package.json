@@ -8,7 +8,7 @@
     "testRegex": "_test\\.js$"
   },
   "devDependencies": {
-    "jest": "^24.1.0",
+    "jest": "^24.3.0",
     "webpack": "^4.29.3",
     "webpack-cli": "^3.2.3"
   }

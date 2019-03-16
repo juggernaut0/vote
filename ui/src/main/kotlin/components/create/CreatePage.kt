@@ -1,13 +1,21 @@
 package components.create
 
+import components.CollapsibleAlert
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kui.*
+import org.w3c.dom.SMOOTH
+import org.w3c.dom.ScrollBehavior
+import org.w3c.dom.ScrollToOptions
+import services.FetchException
 import services.VoteService
 import util.labelledTextInput
 import vote.api.v1.PollCreateRequest
+import kotlin.browser.window
 
 class CreatePage(private val service: VoteService) : Component() {
+    private val alert = CollapsibleAlert("create-page-alert")
+
     private var title: String = ""
     private val questions: MutableList<QuestionPanel> = mutableListOf()
 
@@ -56,13 +64,20 @@ class CreatePage(private val service: VoteService) : Component() {
         render()
         val poll = PollCreateRequest(title, questions.map { it.createQuestion() })
         GlobalScope.launch {
-            service.createPoll(poll)
+            try {
+                service.createPoll(poll)
+            } catch (e: FetchException) {
+                console.error(e)
+                window.scrollTo(ScrollToOptions(0.0, 0.0, ScrollBehavior.SMOOTH))
+                alert.show("There was an error publishing the poll. (${e.status})")
+            }
         }
     }
 
     override fun render() {
         markup().div {
             h2 { +"Create a Poll" }
+            component(alert)
             labelledTextInput("Title", ::title)
             for (q in questions) {
                 component(q)

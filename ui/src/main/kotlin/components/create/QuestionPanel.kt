@@ -1,8 +1,7 @@
 package components.create
 
 import kui.*
-import util.labelledDropdown
-import util.labelledTextInput
+import util.*
 import vote.api.v1.Question
 import vote.api.v1.QuestionType
 import vote.api.v1.RankedSubtype
@@ -75,16 +74,16 @@ class QuestionPanel(private val createPage: CreatePage) : Component() {
                             classes = listOf("close", "question-button"),
                             click = { moveUp() },
                             disabled = isFirst()
-                    )) { +"\u25B2" }
+                    )) { +UP_ARROW }
                     button(Props(
                             classes = listOf("close", "question-button"),
                             click = { removeThis() }
-                    )) { +"\u00D7" }
+                    )) { +X }
                     button(Props(
                             classes = listOf("close", "question-button"),
                             click = { moveDown() },
                             disabled = isLast()
-                    )) { +"\u25BC" }
+                    )) { +DOWN_ARROW }
                 }
             }
         }

@@ -1,14 +1,18 @@
 package components.results
 
+import components.CollapsibleAlert
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kui.*
+import services.FetchException
 import services.VoteService
 import vote.api.v1.Poll
 import vote.api.v1.PollResults
 import vote.api.v1.QuestionType
 
 class ResultsPage(private val service: VoteService) : Component() {
+    private val alert = CollapsibleAlert("results-page-alert")
+
     private var pollResults: Pair<Poll, PollResults>? = null
 
     private var notFound = false
@@ -19,11 +23,16 @@ class ResultsPage(private val service: VoteService) : Component() {
 
     private fun refresh() {
         GlobalScope.launch {
-            pollResults = service.getResults()
-            if (pollResults == null) {
-                notFound = true
+            try {
+                pollResults = service.getResults()
+                if (pollResults == null) {
+                    notFound = true
+                }
+                render()
+            } catch (e: FetchException) {
+                console.error(e)
+                alert.show("There was an error fetching poll results. (${e.status})")
             }
-            render()
         }
     }
 
@@ -52,6 +61,7 @@ class ResultsPage(private val service: VoteService) : Component() {
     override fun render() {
         val pr = pollResults
         markup().div {
+            component(alert)
             if (pr != null) {
                 val (poll, results) = pr
                 div(classes("d-flex", "justify-content-between")) {
