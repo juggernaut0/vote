@@ -26,10 +26,4 @@ class VoteUserDao(private val dsl: DSLContext) {
                 .await()
                 .firstOrNull()
     }
-
-    companion object : DaoProvider<VoteUserDao> {
-        override fun get(dsl: DSLContext): VoteUserDao {
-            return VoteUserDao(dsl)
-        }
-    }
 }

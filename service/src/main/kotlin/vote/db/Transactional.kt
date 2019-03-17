@@ -1,7 +1,6 @@
 package vote.db
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import org.jooq.DSLContext
@@ -18,7 +17,7 @@ class Transactional @Inject constructor(private val config: VoteConfig, private 
             dataSource.connection.use { conn ->
                 val dsl = DSL.using(conn, config.data.sqlDialect)
                 dsl.transactionResultAsync { config ->
-                    runBlocking(Dispatchers.IO) { block(DSL.using(config)) }
+                    runBlocking { block(DSL.using(config)) }
                 }.await()
             }
         } catch (dae: DataAccessException) {

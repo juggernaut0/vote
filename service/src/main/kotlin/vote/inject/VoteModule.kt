@@ -12,10 +12,7 @@ import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import org.apache.http.impl.client.HttpClients
 import vote.config.VoteConfig
-import vote.db.DaoProvider
-import vote.db.PollDao
-import vote.db.ResponseDao
-import vote.db.VoteUserDao
+import vote.db.*
 import javax.sql.DataSource
 
 class VoteModule(private val config: VoteConfig) : AbstractModule() {
@@ -23,9 +20,9 @@ class VoteModule(private val config: VoteConfig) : AbstractModule() {
         bindInstance(config)
         provide { dataSource() }.asEagerSingleton()
 
-        bind(typeLiteral<DaoProvider<PollDao>>()).toInstance(PollDao)
-        bind(typeLiteral<DaoProvider<ResponseDao>>()).toInstance(ResponseDao)
-        bind(typeLiteral<DaoProvider<VoteUserDao>>()).toInstance(VoteUserDao)
+        bindInstance(daoProviderOf { PollDao(it) }, typeLiteral = true)
+        bindInstance(daoProviderOf { ResponseDao(it) }, typeLiteral = true)
+        bindInstance(daoProviderOf { VoteUserDao(it) }, typeLiteral = true)
 
         provide { googleIdTokenVerifier() }.asEagerSingleton()
     }
@@ -50,9 +47,9 @@ class VoteModule(private val config: VoteConfig) : AbstractModule() {
                 .build()
     }
 
-    private inline fun <reified T> bindInstance(instance: T) = bindInstance(null, instance)
-    private inline fun <reified T> bindInstance(name: String?, instance: T) =
-            bind(T::class.java)
+    private inline fun <reified T> bindInstance(instance: T, typeLiteral: Boolean = false) = bindInstance(null, instance, typeLiteral)
+    private inline fun <reified T> bindInstance(name: String?, instance: T, typeLiteral: Boolean = false) =
+            let { if (typeLiteral) bind(typeLiteral()) else  bind(T::class.java) }
                     .let { if (name != null) it.annotatedWith(Names.named(name)) else it }
                     .toInstance(instance)
     private inline fun <reified T> provide(crossinline provider: () -> T) =

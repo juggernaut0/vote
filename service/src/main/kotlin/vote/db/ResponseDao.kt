@@ -50,10 +50,4 @@ class ResponseDao(private val dsl: DSLContext) {
                 .await()
                 .firstOrNull()
     }
-
-    companion object : DaoProvider<ResponseDao> {
-        override fun get(dsl: DSLContext): ResponseDao {
-            return ResponseDao(dsl)
-        }
-    }
 }

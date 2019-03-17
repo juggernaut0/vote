@@ -34,10 +34,4 @@ class PollDao(private val dsl: DSLContext) {
                 .await()
                 .firstOrNull()
     }
-
-    companion object : DaoProvider<PollDao> {
-        override fun get(dsl: DSLContext): PollDao {
-            return PollDao(dsl)
-        }
-    }
 }
