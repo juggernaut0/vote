@@ -1,17 +1,16 @@
-package vote.db
+package vote.db.query
 
 import kotlinx.coroutines.future.await
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.list
-import org.jooq.DSLContext
-import vote.api.v1.Question
 import vote.api.UUID
-import vote.db.jooq.Tables.*
-import vote.db.jooq.tables.records.PollRecord
+import vote.api.v1.Question
+import vote.db.insertAsync
+import vote.db.jooq.Tables.POLL
 import java.time.OffsetDateTime
 
-class PollDao(private val dsl: DSLContext) {
-    suspend fun createPoll(title: String, questions: List<Question>, createdBy: UUID): UUID {
+class PollQueries {
+    fun createPoll(title: String, questions: List<Question>, createdBy: UUID) = queryOf { dsl ->
         val id = UUID.randomUUID()
         dsl.newRecord(POLL)
                 .apply {
@@ -24,11 +23,11 @@ class PollDao(private val dsl: DSLContext) {
                 }
                 .insertAsync()
                 .await()
-        return id
+        id
     }
 
-    suspend fun getPoll(id: UUID): PollRecord? {
-        return dsl.selectFrom(POLL)
+    fun getPoll(id: UUID) = queryOf { dsl ->
+        dsl.selectFrom(POLL)
                 .where(POLL.ID.eq(id))
                 .fetchAsync()
                 .await()

@@ -25,6 +25,8 @@ variable set to the same value as used in the UI.
 
 ## TODO
 * Add page to view history of polls you've created/responded to
+* Add new question type: Multi Freeform, where someone can provide mutliple freeform answers
 * Add page for poll creator to remove votes
+* Rework Instant Runoff calculation to stop when one thing has majority (1 iteration sooner). Also use random to break ties
 * Add option to show poll creators email
 * Dark mode

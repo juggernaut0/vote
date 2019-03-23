@@ -12,18 +12,12 @@ import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import org.apache.http.impl.client.HttpClients
 import vote.config.VoteConfig
-import vote.db.*
 import javax.sql.DataSource
 
 class VoteModule(private val config: VoteConfig) : AbstractModule() {
     override fun configure() {
         bindInstance(config)
         provide { dataSource() }.asEagerSingleton()
-
-        bindInstance(daoProviderOf { PollDao(it) }, typeLiteral = true)
-        bindInstance(daoProviderOf { ResponseDao(it) }, typeLiteral = true)
-        bindInstance(daoProviderOf { VoteUserDao(it) }, typeLiteral = true)
-
         provide { googleIdTokenVerifier() }.asEagerSingleton()
     }
 

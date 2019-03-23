@@ -13,12 +13,10 @@ import kotlinx.serialization.list
 import vote.api.UUID
 import vote.api.v1.*
 import vote.auth.AuthContext
-import vote.db.DaoProvider
-import vote.db.PollDao
-import vote.db.Transactional
-import vote.db.ResponseDao
+import vote.db.Database
 import vote.db.jooq.tables.records.PollRecord
 import vote.db.jooq.tables.records.ResponseRecord
+import vote.db.query.*
 import vote.services.ResultsCalculator
 import vote.util.nullable
 import javax.inject.Inject
@@ -26,9 +24,9 @@ import kotlin.coroutines.coroutineContext
 
 @KtorExperimentalAPI
 class VoteResource @Inject constructor(
-        private val tx: Transactional,
-        private val pollDao: DaoProvider<PollDao>,
-        private val responseDao: DaoProvider<ResponseDao>,
+        private val db: Database,
+        private val pollQueries: PollQueries,
+        private val responseQueries: ResponseQueries,
         private val resultsCalculator: ResultsCalculator
 ) : Resource, VoteApi {
     override fun register(rt: Route) {
@@ -67,8 +65,8 @@ class VoteResource @Inject constructor(
 
     override suspend fun createPoll(pollCreateRequest: PollCreateRequest): Poll {
         val userId = coroutineContext[AuthContext]!!.userId.id
-        val id = tx.withDao(pollDao) { dao ->
-            dao.createPoll(pollCreateRequest.title, pollCreateRequest.questions, userId)
+        val id = db.transaction { q ->
+            q.run(pollQueries.createPoll(pollCreateRequest.title, pollCreateRequest.questions, userId))
         }
         return Poll(
                 id = id,
@@ -78,25 +76,25 @@ class VoteResource @Inject constructor(
     }
 
     override suspend fun getPoll(id: UUID): Poll? {
-        val pr = tx.withDao(pollDao) { dao ->
-            dao.getPoll(id)
+        val pr = db.transaction { q ->
+            q.run(pollQueries.getPoll(id))
         }
         return pr?.toApi()
     }
 
     override suspend fun getResponse(pollId: UUID): PollResponse? {
         val userId = coroutineContext[AuthContext]!!.userId.id
-        val resp = tx.withDao(responseDao) { dao ->
-            dao.getResponse(pollId, userId)
+        val resp = db.transaction { q ->
+            q.run(responseQueries.getResponse(pollId, userId))
         }
         return resp?.toApi()
     }
 
     override suspend fun submitResponse(pollId: UUID, response: PollResponse) {
         val userId = coroutineContext[AuthContext]!!.userId.id
-        tx.withDaos(pollDao, responseDao) { pollDao, responseDao ->
-            val pAsync = async { pollDao.getPoll(pollId)?.toApi() }
-            val rAsync = async { responseDao.getResponse(pollId, userId) }
+        db.transaction { q ->
+            val pAsync = async { q.run(pollQueries.getPoll(pollId))?.toApi() }
+            val rAsync = async { q.run(responseQueries.getResponse(pollId, userId)) }
             val p = pAsync.await() ?: throw NotFoundException("Poll with ID {$pollId} not found")
 
             // TODO more validation (extract to service?)
@@ -104,17 +102,17 @@ class VoteResource @Inject constructor(
 
             val existing = rAsync.await()
             if (existing == null) {
-                responseDao.createResponse(pollId, userId, response)
+                q.run(responseQueries.createResponse(pollId, userId, response))
             } else {
-                responseDao.updateResponse(existing.id, response)
+                q.run(responseQueries.updateResponse(existing.id, response))
             }
         }
     }
 
     override suspend fun getResults(pollId: UUID): PollResults? {
-        val (poll, resps) = tx.withDaos(pollDao, responseDao) { pollDao, responseDao ->
-            val poll = async { pollDao.getPoll(pollId) }
-            val resps = async { responseDao.getAllResponses(pollId) }
+        val (poll, resps) = db.transaction { q ->
+            val poll = async { q.run(pollQueries.getPoll(pollId)) }
+            val resps = async { q.run(responseQueries.getAllResponses(pollId)) }
             poll.await() to resps.await()
         }
         if (poll == null || resps.isEmpty()) return null

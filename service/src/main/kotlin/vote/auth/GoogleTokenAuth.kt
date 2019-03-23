@@ -8,21 +8,20 @@ import io.ktor.http.auth.HttpAuthHeader
 import io.ktor.response.respond
 import org.slf4j.LoggerFactory
 import vote.api.UUID
-import vote.db.DaoProvider
-import vote.db.Transactional
-import vote.db.VoteUserDao
+import vote.db.Database
+import vote.db.query.VoteUserQueries
 import vote.services.GoogleTokenVerifier
 import javax.inject.Inject
 
 class GoogleTokenAuthProvider @Inject constructor(
         private val verifier: GoogleTokenVerifier,
-        private val tx: Transactional,
-        private val userDao: DaoProvider<VoteUserDao>
+        private val voteUserQueries: VoteUserQueries,
+        private val db: Database
 ): AuthenticationProvider() {
     suspend fun verify(token: String): UserId? {
         val verified = verifier.verify(token) ?: return null
-        val userId = tx.withDao(userDao) { dao ->
-            dao.getByGoogleId(verified.googleId)?.id
+        val userId = db.transaction { q ->
+            q.run(voteUserQueries.getByGoogleId(verified.googleId))?.id
         } ?: return null
         return UserId(userId)
     }

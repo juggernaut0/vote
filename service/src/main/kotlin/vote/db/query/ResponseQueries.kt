@@ -1,17 +1,16 @@
-package vote.db
+package vote.db.query
 
 import kotlinx.coroutines.future.await
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.list
-import org.jooq.DSLContext
+import vote.api.UUID
 import vote.api.v1.PollResponse
 import vote.api.v1.Response
-import vote.api.UUID
+import vote.db.insertAsync
 import vote.db.jooq.Tables.RESPONSE
-import vote.db.jooq.tables.records.ResponseRecord
 
-class ResponseDao(private val dsl: DSLContext) {
-    suspend fun createResponse(pollId: UUID, voterId: UUID, resp: PollResponse): UUID {
+class ResponseQueries {
+    fun createResponse(pollId: UUID, voterId: UUID, resp: PollResponse) = queryOf { dsl ->
         val id = UUID.randomUUID()
         dsl.newRecord(RESPONSE)
                 .apply {
@@ -23,10 +22,10 @@ class ResponseDao(private val dsl: DSLContext) {
                 }
                 .insertAsync()
                 .await()
-        return id
+        id
     }
 
-    suspend fun updateResponse(respId: UUID, resp: PollResponse) {
+    fun updateResponse(respId: UUID, resp: PollResponse) = queryOf<Unit> { dsl ->
         dsl.update(RESPONSE)
                 .set(RESPONSE.VERSION, 1)
                 .set(RESPONSE.RESPONSES, Json.stringify(Response.serializer().list, resp.responses))
@@ -35,15 +34,15 @@ class ResponseDao(private val dsl: DSLContext) {
                 .await()
     }
 
-    suspend fun getAllResponses(pollId: UUID): List<ResponseRecord> {
-        return dsl.selectFrom(RESPONSE)
+    fun getAllResponses(pollId: UUID) = queryOf { dsl ->
+        dsl.selectFrom(RESPONSE)
                 .where(RESPONSE.POLL_ID.eq(pollId))
                 .fetchAsync()
                 .await()
     }
 
-    suspend fun getResponse(pollId: UUID, voterId: UUID): ResponseRecord? {
-        return dsl.selectFrom(RESPONSE)
+    fun getResponse(pollId: UUID, voterId: UUID) = queryOf { dsl ->
+        dsl.selectFrom(RESPONSE)
                 .where(RESPONSE.POLL_ID.eq(pollId))
                 .and(RESPONSE.VOTER_ID.eq(voterId))
                 .fetchAsync()
