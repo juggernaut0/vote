@@ -1,4 +1,5 @@
 import components.create.CreatePage
+import components.history.HistoryPage
 import components.results.ResultsPage
 import components.signin.SignInPage
 import components.vote.VotePage
@@ -13,7 +14,7 @@ fun main() {
     val initPage = when {
         search.get("vote") != null -> Page.VOTE
         search.get("results") != null -> Page.RESULTS
-        else -> Page.CREATE
+        else -> Page.HISTORY
     }
     window.history.replaceState(initPage.name, "")
 
@@ -35,6 +36,7 @@ fun main() {
         kui.mountComponent("app", router.component { p ->
             when (p) {
                 Page.SIGNIN -> SignInPage(signIn, router, initPage)
+                Page.HISTORY -> HistoryPage(service)
                 Page.CREATE -> CreatePage(service)
                 Page.VOTE -> VotePage(service)
                 Page.RESULTS -> ResultsPage(service)

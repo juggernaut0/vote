@@ -32,6 +32,11 @@ class VoteResource @Inject constructor(
     override fun register(rt: Route) {
         with (rt) {
             authenticate {
+                get("/polls") {
+                    withAuthContext {
+                        call.respondJson(PollHistory.serializer(), getPollHistory())
+                    }
+                }
                 post("/polls") {
                     withAuthContext {
                         val body = call.receiveJson(PollCreateRequest.serializer())
@@ -115,8 +120,20 @@ class VoteResource @Inject constructor(
             val resps = async { q.run(responseQueries.getAllResponses(pollId)) }
             poll.await() to resps.await()
         }
-        if (poll == null || resps.isEmpty()) return null
+        if (poll == null) return null
         return resultsCalculator.calculateResults(poll.toApi(), resps.map { it.toApi() })
+    }
+
+    override suspend fun getPollHistory(): PollHistory {
+        val userId = coroutineContext[AuthContext]!!.userId.id
+        return db.transaction { q ->
+            val created = async { q.run(pollQueries.getCreatedPolls(userId)) }
+            val responded = async { q.run(pollQueries.getRespondedPolls(userId)) }
+            PollHistory(
+                    created = created.await().map { it.toApi() },
+                    responded = responded.await().map { it.toApi() }
+            )
+        }
     }
 
     private fun PollRecord.toApi(): Poll {

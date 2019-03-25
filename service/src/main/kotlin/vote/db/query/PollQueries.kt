@@ -7,6 +7,8 @@ import vote.api.UUID
 import vote.api.v1.Question
 import vote.db.insertAsync
 import vote.db.jooq.Tables.POLL
+import vote.db.jooq.Tables.RESPONSE
+import vote.db.jooq.tables.records.PollRecord
 import java.time.OffsetDateTime
 
 class PollQueries {
@@ -32,5 +34,24 @@ class PollQueries {
                 .fetchAsync()
                 .await()
                 .firstOrNull()
+    }
+
+    fun getCreatedPolls(createdBy: UUID): Query<List<PollRecord>> = queryOf { dsl ->
+        dsl.selectFrom(POLL)
+                .where(POLL.CREATED_BY.eq(createdBy))
+                .orderBy(POLL.CREATED_DT.desc())
+                .limit(50)
+                .fetchAsync()
+                .await()
+    }
+
+    fun getRespondedPolls(voterId: UUID): Query<List<PollRecord>> = queryOf { dsl ->
+        dsl.select(POLL.asterisk()).from(POLL.join(RESPONSE).onKey())
+                .where(RESPONSE.VOTER_ID.eq(voterId))
+                .orderBy(POLL.CREATED_DT.desc())
+                .limit(50)
+                .fetchAsync()
+                .await()
+                .map { it.into(POLL) }
     }
 }

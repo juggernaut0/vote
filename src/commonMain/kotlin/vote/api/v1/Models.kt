@@ -71,3 +71,9 @@ data class Result(
         val freeform: List<String>? = null,
         val votes: List<Int>? = null
 )
+
+@Serializable
+data class PollHistory(
+        val created: List<Poll>,
+        val responded: List<Poll>
+)

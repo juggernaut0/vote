@@ -8,4 +8,5 @@ interface VoteApi {
     suspend fun getResponse(pollId: UUID): PollResponse?
     suspend fun submitResponse(pollId: UUID, response: PollResponse)
     suspend fun getResults(pollId: UUID): PollResults?
+    suspend fun getPollHistory(): PollHistory
 }

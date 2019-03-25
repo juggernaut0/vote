@@ -13,6 +13,10 @@ class VoteApiClient(private val authSupplier: () -> String) : VoteApi {
         }
     }
 
+    override suspend fun getPollHistory(): PollHistory {
+        return fetch("GET", "/api/v1/polls", PollHistory.serializer(), headers = headers())
+    }
+
     override suspend fun createPoll(pollCreateRequest: PollCreateRequest): Poll {
         return fetch("POST", "/api/v1/polls", pollCreateRequest, PollCreateRequest.serializer(), Poll.serializer(), headers = headers())
     }

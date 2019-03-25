@@ -7,6 +7,7 @@
     </appender>
 
     <logger name="vote" level="DEBUG"/>
+    <!--<logger name="org.jooq.tools.LoggerListener" level="DEBUG"/>-->
 
     <root level="INFO">
         <appender-ref ref="STDOUT" />
