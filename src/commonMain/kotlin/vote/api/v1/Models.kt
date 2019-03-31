@@ -3,6 +3,7 @@
 
 package vote.api.v1
 
+import kotlinx.serialization.Optional
 import kotlinx.serialization.Serializable
 import vote.api.UUID
 import vote.api.UUIDSerializer
@@ -56,9 +57,9 @@ data class PollResponse(
 
 @Serializable
 data class Response internal constructor(
-        val freeform: String? = null,
-        val multiFreeform: List<String>? = null,
-        val selections: List<Int>? = null
+        @Optional val freeform: String? = null,
+        @Optional val multiFreeform: List<String>? = null,
+        @Optional val selections: List<Int>? = null
 ) {
     companion object {
         fun freeform(response: String) = Response(freeform = response)
