@@ -9,7 +9,7 @@ class ResultsCalculator {
         for ((i, q) in poll.questions.withIndex()) {
             val resps = responses.map { it.responses[i] }
             val r = when (q.type) {
-                QuestionType.FREEFORM -> summarizeFreeform(resps)
+                QuestionType.FREEFORM -> summarizeFreeform(q, resps)
                 QuestionType.SELECT -> summarizeSelect(q, resps)
                 QuestionType.RANKED -> summarizeRanked(q, resps)
                 else -> {
@@ -22,9 +22,18 @@ class ResultsCalculator {
         return PollResults(results)
     }
 
-    private fun summarizeFreeform(responses: List<Response>): Result {
-        val rs = responses.mapNotNull { r -> r.freeform.takeUnless { it.isNullOrBlank() } }
-        return Result(rs.size, freeform = rs)
+    private fun summarizeFreeform(question: Question, responses: List<Response>): Result {
+        return when (question.subtype) {
+            FreeformSubtype.MUTLI -> {
+                val rs = responses.mapNotNull { r -> r.multiFreeform?.takeUnless { it.isEmpty() } }
+                Result(rs.size, freeform = rs.flatten())
+            }
+            else -> {
+                val rs = responses.mapNotNull { r -> r.freeform.takeUnless { it.isNullOrBlank() } }
+                Result(rs.size, freeform = rs)
+            }
+        }
+
     }
 
     private fun summarizeSelect(question: Question, responses: List<Response>): Result {

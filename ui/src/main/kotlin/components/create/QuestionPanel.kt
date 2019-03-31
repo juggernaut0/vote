@@ -1,26 +1,14 @@
 package components.create
 
+import components.MultiInput
 import kui.*
 import util.*
-import vote.api.v1.Question
-import vote.api.v1.QuestionType
-import vote.api.v1.RankedSubtype
-import vote.api.v1.SelectSubtype
+import vote.api.v1.*
 
 class QuestionPanel(private val createPage: CreatePage) : Component() {
     private var question: String = ""
     private var type: QType by renderOnSet(QType.FREEFORM)
-    private val options: MutableList<OptionItem> = mutableListOf(OptionItem(this))
-
-    private fun addOption() {
-        options.add(OptionItem(this))
-        render()
-    }
-
-    fun removeOption(opt: OptionItem) {
-        options.remove(opt)
-        render()
-    }
+    private val options = MultiInput(placeholder = "Add option...")
 
     private fun isFirst(): Boolean = createPage.isFirst(this)
     private fun isLast(): Boolean = createPage.isLast(this)
@@ -32,7 +20,7 @@ class QuestionPanel(private val createPage: CreatePage) : Component() {
         val opts = if (type == QType.FREEFORM) {
             emptyList()
         } else {
-            options.mapNotNull { o -> o.text.takeUnless { it.isBlank() } }
+            options.getValues()
         }
         return Question(
                 question = question,
@@ -49,29 +37,15 @@ class QuestionPanel(private val createPage: CreatePage) : Component() {
                     div(classes("card-body")) {
                         labelledTextInput("Question", ::question)
                         labelledDropdown("Type", ::type, QType.values().asList())
-                        if (type != QType.FREEFORM) {
+                        if (type.type != QuestionType.FREEFORM) {
                             label { +"Options" }
-                            ul(classes("list-group", "mb-2")) {
-                                /* TODO: When an empty OptionItem has something typed in it, add a new empty one beneath it
-                                 * When an empty OptionItem loses focus, remove it automatically, except if it's the last one in the list
-                                 * Remove/disable X button on last OptionItem in list
-                                 * Then the "Add Option" button can be removed
-                                 */
-                                for (opt in options) {
-                                    component(opt)
-                                }
-                                button(Props(
-                                        classes = listOf("list-group-item", "list-group-item-action", "active", "text-center"),
-                                        click = { addOption() }
-                                )) { +"Add Option" }
-                            }
-
+                            component(options)
                         }
                     }
                 }
                 div(classes("question-buttons", "ml-2", "border-left")) {
                     button(Props(
-                            classes = listOf("close", "question-button"),
+                            classes = listOf("close", "question-button", "invisible-disabled"),
                             click = { moveUp() },
                             disabled = isFirst()
                     )) { +UP_ARROW }
@@ -80,7 +54,7 @@ class QuestionPanel(private val createPage: CreatePage) : Component() {
                             click = { removeThis() }
                     )) { +X }
                     button(Props(
-                            classes = listOf("close", "question-button"),
+                            classes = listOf("close", "question-button", "invisible-disabled"),
                             click = { moveDown() },
                             disabled = isLast()
                     )) { +DOWN_ARROW }
@@ -90,7 +64,8 @@ class QuestionPanel(private val createPage: CreatePage) : Component() {
     }
 
     private enum class QType(val type: String, val subtype: String) {
-        FREEFORM(QuestionType.FREEFORM, ""),
+        FREEFORM(QuestionType.FREEFORM, FreeformSubtype.SINGLE),
+        FREEFORM_MUTLIPLE_ANSWER(QuestionType.FREEFORM, FreeformSubtype.MUTLI),
         SELECT_ONE(QuestionType.SELECT, SelectSubtype.SELECT_ONE),
         SELECT_MANY(QuestionType.SELECT, SelectSubtype.SELECT_MANY),
         BORDA_COUNT(QuestionType.RANKED, RankedSubtype.BORDA_COUNT),

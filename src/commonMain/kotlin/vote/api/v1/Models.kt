@@ -34,6 +34,11 @@ object QuestionType {
     const val RANKED = "RANKED"
 }
 
+object FreeformSubtype {
+    const val SINGLE = "SINGLE"
+    const val MUTLI = "MULTI"
+}
+
 object SelectSubtype {
     const val SELECT_ONE = "SELECT_ONE"
     const val SELECT_MANY = "SELECT_MANY"
@@ -51,12 +56,14 @@ data class PollResponse(
 
 @Serializable
 data class Response internal constructor(
-        val freeform: String?,
-        val selections: List<Int>?
+        val freeform: String? = null,
+        val multiFreeform: List<String>? = null,
+        val selections: List<Int>? = null
 ) {
     companion object {
-        fun freeform(response: String) = Response(response, null)
-        fun selections(selections: List<Int>) = Response(null, selections)
+        fun freeform(response: String) = Response(freeform = response)
+        fun multiFreeform(responses: List<String>) = Response(multiFreeform = responses)
+        fun selections(selections: List<Int>) = Response(selections = selections)
     }
 }
 

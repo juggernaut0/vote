@@ -22,6 +22,7 @@ button.close.question-button:focus {
     outline: 0;
 }
 
-button.close.question-button:disabled {
+button.close.invisible-disabled:disabled {
     color: transparent;
+    opacity: 0;
 }

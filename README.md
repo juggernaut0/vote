@@ -24,8 +24,13 @@ In order to run the service, you must have a `GOOGLE_SIGNIN_CLIENT_ID`
 variable set to the same value as used in the UI.
 
 ## TODO
-* Add new question type: Multi Freeform, where someone can provide mutliple freeform answers
 * Add page for poll creator to remove votes
-* Rework Instant Runoff calculation to stop when one thing has majority (1 iteration sooner). Also use random to break ties
+* Rework Instant Runoff calculation to stop when one thing has majority 
+(1 iteration sooner). Also use random to break ties
+* Add poll creation validation, both server- and web-side
+    * Non-empty title
+    * 1 or more questions
+    * No empty option lists
+    * Every question has a non-empty title
 * Add option to show poll creators email
 * Dark mode
