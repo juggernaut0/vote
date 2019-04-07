@@ -24,7 +24,6 @@ In order to run the service, you must have a `GOOGLE_SIGNIN_CLIENT_ID`
 variable set to the same value as used in the UI.
 
 ## TODO
-* Add page for poll creator to remove votes
 * Rework Instant Runoff calculation to stop when one thing has majority 
 (1 iteration sooner). Also use random to break ties
 * Add poll creation validation, both server- and web-side

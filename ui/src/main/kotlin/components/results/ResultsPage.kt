@@ -14,6 +14,7 @@ class ResultsPage(private val service: VoteService) : Component() {
     private val alert = CollapsibleAlert("results-page-alert")
 
     private var pollResults: Pair<Poll, PollResults>? = null
+    private var isOwner: Boolean = false
 
     private var notFound = false
 
@@ -29,6 +30,10 @@ class ResultsPage(private val service: VoteService) : Component() {
                     notFound = true
                 }
                 render()
+                isOwner = pollResults?.let { service.isCreator(it.first.id) } ?: false
+                if (isOwner) {
+                    render()
+                }
             } catch (e: FetchException) {
                 console.error(e)
                 alert.show("There was an error fetching poll results. (${e.status})")
@@ -67,6 +72,9 @@ class ResultsPage(private val service: VoteService) : Component() {
                 div(classes("d-flex", "justify-content-between")) {
                     h3 { +"${poll.title} - Results" }
                     button(Props(classes = listOf("close"), click = { refresh() })) { +"\u21bb" }
+                }
+                if (isOwner) {
+                    a(Props(click = { service.goToDetailsPage() })) { +"View responses" }
                 }
                 for ((q, r) in poll.questions.zip(results.results)) {
                     div(classes("card", "bg-light", "mb-2")) {

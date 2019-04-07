@@ -56,6 +56,14 @@ data class PollResponse(
 )
 
 @Serializable
+data class PollResponseDetails(
+        @Serializable(with = UUIDSerializer::class) val id: UUID,
+        val email: String,
+        val active: Boolean,
+        val responses: List<Response>
+)
+
+@Serializable
 data class Response internal constructor(
         @Optional val freeform: String? = null,
         @Optional val multiFreeform: List<String>? = null,

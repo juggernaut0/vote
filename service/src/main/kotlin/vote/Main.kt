@@ -2,9 +2,12 @@ package vote
 
 import com.google.inject.Guice
 import com.google.inject.Injector
+import io.ktor.application.call
 import io.ktor.application.install
 import io.ktor.auth.Authentication
 import io.ktor.features.CallLogging
+import io.ktor.features.StatusPages
+import io.ktor.response.respond
 import io.ktor.routing.Route
 import io.ktor.routing.route
 import io.ktor.routing.routing
@@ -18,6 +21,7 @@ import vote.inject.VoteModule
 import vote.resources.Resource
 import vote.resources.UsersResource
 import vote.resources.VoteResource
+import vote.util.WebApplicationException
 
 @KtorExperimentalAPI
 fun main() {
@@ -29,6 +33,12 @@ fun main() {
         }
         install(Authentication) {
             googleToken(injector)
+        }
+        install(StatusPages) {
+            exception<WebApplicationException> { e ->
+                call.respond(e.status)
+                throw e
+            }
         }
         routing {
             route("/api/v1") {

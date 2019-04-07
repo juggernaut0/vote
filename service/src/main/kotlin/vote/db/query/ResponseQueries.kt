@@ -8,6 +8,9 @@ import vote.api.v1.PollResponse
 import vote.api.v1.Response
 import vote.db.insertAsync
 import vote.db.jooq.Tables.RESPONSE
+import vote.db.jooq.Tables.VOTE_USER
+import vote.db.jooq.tables.records.ResponseRecord
+import vote.db.jooq.tables.records.VoteUserRecord
 
 class ResponseQueries {
     fun createResponse(pollId: UUID, voterId: UUID, resp: PollResponse) = queryOf { dsl ->
@@ -34,11 +37,20 @@ class ResponseQueries {
                 .await()
     }
 
-    fun getAllResponses(pollId: UUID) = queryOf { dsl ->
+    fun getAllActiveResponses(pollId: UUID) = queryOf { dsl ->
         dsl.selectFrom(RESPONSE)
+                .where(RESPONSE.POLL_ID.eq(pollId))
+                .and(RESPONSE.ACTIVE.eq(true))
+                .fetchAsync()
+                .await()
+    }
+
+    fun getAllResponsesWithUsers(pollId: UUID) = queryOf<List<Pair<ResponseRecord, VoteUserRecord>>> { dsl ->
+        dsl.select().from(RESPONSE.join(VOTE_USER).onKey())
                 .where(RESPONSE.POLL_ID.eq(pollId))
                 .fetchAsync()
                 .await()
+                .map { it.into(RESPONSE) to it.into(VOTE_USER) }
     }
 
     fun getResponse(pollId: UUID, voterId: UUID) = queryOf { dsl ->
@@ -48,5 +60,15 @@ class ResponseQueries {
                 .fetchAsync()
                 .await()
                 .firstOrNull()
+    }
+
+    fun deactivateResponse(pollId: UUID, responseId: UUID) = queryOf { dsl ->
+        val rowsChanged = dsl.update(RESPONSE)
+                .set(RESPONSE.ACTIVE, false)
+                .where(RESPONSE.ID.eq(responseId))
+                .and(RESPONSE.POLL_ID.eq(pollId)) // validation check
+                .executeAsync()
+                .await()
+        rowsChanged > 0
     }
 }

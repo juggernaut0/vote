@@ -1,4 +1,5 @@
 import components.create.CreatePage
+import components.details.DetailsPage
 import components.history.HistoryPage
 import components.results.ResultsPage
 import components.signin.SignInPage
@@ -40,6 +41,7 @@ fun main() {
                 Page.CREATE -> CreatePage(service)
                 Page.VOTE -> VotePage(service)
                 Page.RESULTS -> ResultsPage(service)
+                Page.DETAILS -> DetailsPage(service)
             }
         })
     }

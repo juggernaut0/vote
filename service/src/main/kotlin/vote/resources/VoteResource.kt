@@ -4,20 +4,25 @@ import io.ktor.application.call
 import io.ktor.auth.authenticate
 import io.ktor.features.BadRequestException
 import io.ktor.features.NotFoundException
+import io.ktor.http.HttpStatusCode
+import io.ktor.response.respond
 import io.ktor.routing.*
 import io.ktor.util.KtorExperimentalAPI
 import kotlinx.coroutines.async
 import kotlinx.serialization.internal.UnitSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.list
+import kotlinx.serialization.serializer
 import vote.api.UUID
 import vote.api.v1.*
 import vote.auth.AuthContext
 import vote.db.Database
 import vote.db.jooq.tables.records.PollRecord
 import vote.db.jooq.tables.records.ResponseRecord
+import vote.db.jooq.tables.records.VoteUserRecord
 import vote.db.query.*
 import vote.services.ResultsCalculator
+import vote.util.UnauthorizedException
 import vote.util.nullable
 import javax.inject.Inject
 import kotlin.coroutines.coroutineContext
@@ -43,10 +48,22 @@ class VoteResource @Inject constructor(
                         call.respondJson(Poll.serializer(), createPoll(body))
                     }
                 }
+                get("polls/{id}/creator") {
+                    withAuthContext {
+                        val id = call.parameters.getUUID("id")
+                        call.respondJson(Boolean.serializer(), isCreator(id))
+                    }
+                }
                 get("/polls/{id}/response") {
                     withAuthContext {
                         val id = call.parameters.getUUID("id")
                         call.respondJson(PollResponse.serializer().nullable, getResponse(id))
+                    }
+                }
+                get("/polls/{id}/responses") {
+                    withAuthContext {
+                        val id = call.parameters.getUUID("id")
+                        call.respondJson(PollResponseDetails.serializer().list, getResponses(id))
                     }
                 }
                 put("/polls/{id}/response") {
@@ -54,6 +71,14 @@ class VoteResource @Inject constructor(
                         val id = call.parameters.getUUID("id")
                         val body = call.receiveJson(PollResponse.serializer())
                         call.respondJson(UnitSerializer, submitResponse(id, body))
+                    }
+                }
+                delete("/polls/{id}/responses/{respId}") {
+                    withAuthContext {
+                        val pollId = call.parameters.getUUID("id")
+                        val respId = call.parameters.getUUID("respId")
+                        deactivateResponse(pollId, respId)
+                        call.respond(HttpStatusCode.NoContent)
                     }
                 }
             }
@@ -87,12 +112,28 @@ class VoteResource @Inject constructor(
         return pr?.toApi()
     }
 
+    override suspend fun isCreator(id: UUID): Boolean {
+        val userId = coroutineContext[AuthContext]!!.userId.id
+        return db.transaction { q ->
+            q.run(pollQueries.getPoll(id))?.createdBy == userId
+        }
+    }
+
     override suspend fun getResponse(pollId: UUID): PollResponse? {
         val userId = coroutineContext[AuthContext]!!.userId.id
         val resp = db.transaction { q ->
             q.run(responseQueries.getResponse(pollId, userId))
         }
         return resp?.toApi()
+    }
+
+    override suspend fun getResponses(pollId: UUID): List<PollResponseDetails> {
+        val userId = coroutineContext[AuthContext]!!.userId.id
+        return db.transaction { q ->
+            val poll = q.run(pollQueries.getPoll(pollId)) ?: throw NotFoundException("Poll with ID {$pollId} not found")
+            if (poll.createdBy != userId) throw UnauthorizedException("Cannot view responses of a poll you didn't create")
+            q.run(responseQueries.getAllResponsesWithUsers(pollId)).map { it.toApi() }
+        }
     }
 
     override suspend fun submitResponse(pollId: UUID, response: PollResponse) {
@@ -114,10 +155,17 @@ class VoteResource @Inject constructor(
         }
     }
 
+    override suspend fun deactivateResponse(pollId: UUID, responseId: UUID) {
+        val success = db.transaction { q ->
+            q.run(responseQueries.deactivateResponse(pollId, responseId))
+        }
+        if (!success) throw BadRequestException("Response ID {$responseId} does not belong to pollId {$pollId}")
+    }
+
     override suspend fun getResults(pollId: UUID): PollResults? {
         val (poll, resps) = db.transaction { q ->
             val poll = async { q.run(pollQueries.getPoll(pollId)) }
-            val resps = async { q.run(responseQueries.getAllResponses(pollId)) }
+            val resps = async { q.run(responseQueries.getAllActiveResponses(pollId)) }
             poll.await() to resps.await()
         }
         if (poll == null) return null
@@ -140,13 +188,23 @@ class VoteResource @Inject constructor(
         return Poll(
                 id = id,
                 title = title,
-                questions = Json.parse(Question.serializer().list, questions)
+                questions = Json.nonstrict.parse(Question.serializer().list, questions)
         )
     }
 
     private fun ResponseRecord.toApi(): PollResponse {
         return PollResponse(
-                responses = Json.parse(Response.serializer().list, responses)
+                responses = Json.nonstrict.parse(Response.serializer().list, responses)
+        )
+    }
+
+    private fun Pair<ResponseRecord, VoteUserRecord>.toApi(): PollResponseDetails {
+        val (resp, user) = this
+        return PollResponseDetails(
+                id = resp.id,
+                email = user.email,
+                active = resp.active,
+                responses = Json.nonstrict.parse(Response.serializer().list, resp.responses)
         )
     }
 }
