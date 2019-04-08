@@ -1,20 +1,29 @@
 package components.details
 
+import components.CollapsibleAlert
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kui.*
 import models.ResponseDetailsView
+import services.FetchException
 import services.VoteService
 import util.modal
 
 class DetailsPage(private val service: VoteService) : Component() {
+    private val alert = CollapsibleAlert("details-page-alert")
+
     private var details: List<ResponseDetailsView>? = null
     private var currentDetails: ResponseDetailsView? = null
 
     init {
         GlobalScope.launch {
-            details = service.getResponseDetails()
-            render()
+            try {
+                details = service.getResponseDetails()
+                render()
+            } catch (e: FetchException) {
+                console.error(e)
+                alert.show("There was an error fetching response details. (${e.status})")
+            }
         }
     }
 
@@ -32,14 +41,21 @@ class DetailsPage(private val service: VoteService) : Component() {
 
     private fun deactivateResponse(d: ResponseDetailsView) {
         GlobalScope.launch {
-            service.deactivateResponse(d.id)
-            details = service.getResponseDetails()
-            render()
+            try {
+                service.deactivateResponse(d.id)
+                details = service.getResponseDetails()
+                render()
+            } catch (e: FetchException) {
+                console.error(e)
+                alert.show("There was an error deactivating the response. (${e.status})")
+            }
         }
     }
 
     override fun render() {
         markup().div {
+            component(alert)
+
             a(Props(click = { service.goToResultsPage() })) { +"Back to results" }
 
             val details = details

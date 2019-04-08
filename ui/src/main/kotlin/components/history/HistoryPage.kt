@@ -1,27 +1,38 @@
 package components.history
 
+import components.CollapsibleAlert
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kui.*
 import models.PollHistoryItem
+import services.FetchException
 import services.VoteService
 import util.CHECK_MARK
 
 class HistoryPage(private val service: VoteService) : Component() {
+    private val alert = CollapsibleAlert("history-page-alert")
+
     private var created: List<PollHistoryItem> = emptyList()
     private var responded: List<PollHistoryItem> = emptyList()
 
     init {
         GlobalScope.launch {
-            val (c, r) = service.getPollHistory()
-            created = c
-            responded = r
-            render()
+            try {
+                val (c, r) = service.getPollHistory()
+                created = c
+                responded = r
+                render()
+            } catch (e: FetchException) {
+                console.error(e)
+                alert.show("There was an error fetching poll history. (${e.status})")
+            }
         }
     }
 
     override fun render() {
         markup().div {
+            component(alert)
+
             button(Props(classes = listOf("btn", "btn-success"), click = { service.goToCreatePage() })) {
                 +"Create New Poll"
             }
