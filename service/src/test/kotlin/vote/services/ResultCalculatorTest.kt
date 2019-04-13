@@ -100,7 +100,7 @@ class ResultCalculatorTest {
 
         assertEquals(1, results.results.size)
         assertNotNull(results.results[0].votes)
-        assertEquals(listOf(9, 0, 0), results.results[0].votes!!)
+        assertEquals(listOf(5, 0, 4), results.results[0].votes!!)
     }
 
     @Test
