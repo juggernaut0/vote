@@ -2,7 +2,6 @@ package vote.resources
 
 import io.ktor.application.call
 import io.ktor.auth.authenticate
-import io.ktor.features.BadRequestException
 import io.ktor.features.NotFoundException
 import io.ktor.http.HttpStatusCode
 import io.ktor.response.respond
@@ -21,7 +20,9 @@ import vote.db.jooq.tables.records.PollRecord
 import vote.db.jooq.tables.records.ResponseRecord
 import vote.db.jooq.tables.records.VoteUserRecord
 import vote.db.query.*
+import vote.services.PollValidator
 import vote.services.ResultsCalculator
+import vote.util.BadRequestException
 import vote.util.UnauthorizedException
 import vote.util.nullable
 import javax.inject.Inject
@@ -32,7 +33,8 @@ class VoteResource @Inject constructor(
         private val db: Database,
         private val pollQueries: PollQueries,
         private val responseQueries: ResponseQueries,
-        private val resultsCalculator: ResultsCalculator
+        private val resultsCalculator: ResultsCalculator,
+        private val pollValidator: PollValidator
 ) : Resource, VoteApi {
     override fun register(rt: Route) {
         with (rt) {
@@ -95,6 +97,8 @@ class VoteResource @Inject constructor(
 
     override suspend fun createPoll(pollCreateRequest: PollCreateRequest): Poll {
         val userId = coroutineContext[AuthContext]!!.userId.id
+        val validation = pollValidator.validate(pollCreateRequest)
+        if (validation.isNotEmpty()) throw BadRequestException(validation.toString())
         val id = db.transaction { q ->
             q.run(pollQueries.createPoll(pollCreateRequest.title, pollCreateRequest.questions, userId))
         }
@@ -143,8 +147,8 @@ class VoteResource @Inject constructor(
             val rAsync = async { q.run(responseQueries.getResponse(pollId, userId)) }
             val p = pAsync.await() ?: throw NotFoundException("Poll with ID {$pollId} not found")
 
-            // TODO more validation (extract to service?)
-            if (p.questions.size != response.responses.size) throw BadRequestException("Response list does not match question list")
+            val validation = pollValidator.validateResponse(p, response)
+            if (validation.isNotEmpty()) throw BadRequestException(validation.toString())
 
             val existing = rAsync.await()
             if (existing == null) {

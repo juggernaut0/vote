@@ -36,7 +36,7 @@ fun main() {
         }
         install(StatusPages) {
             exception<WebApplicationException> { e ->
-                call.respond(e.status)
+                call.respond(e.status, e.message.orEmpty())
                 throw e
             }
         }

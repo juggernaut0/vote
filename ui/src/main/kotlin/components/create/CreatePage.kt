@@ -69,7 +69,13 @@ class CreatePage(private val service: VoteService) : Component() {
             } catch (e: FetchException) {
                 console.error(e)
                 window.scrollTo(ScrollToOptions(0.0, 0.0, ScrollBehavior.SMOOTH))
-                alert.show("There was an error publishing the poll. (${e.status})")
+                if (e.status == 400.toShort()) {
+                    alert.show("There were errors publishing the poll: ${e.body}")
+                    submitting = false
+                    render()
+                } else {
+                    alert.show("There was an error publishing the poll. (${e.status})")
+                }
             }
         }
     }
