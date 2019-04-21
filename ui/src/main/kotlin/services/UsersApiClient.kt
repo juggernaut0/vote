@@ -1,11 +1,9 @@
 package services
 
-import kotlinx.serialization.internal.UnitSerializer
-import kotlinx.serialization.serializer
-import vote.api.v1.UsersApi
+import vote.api.v1.signIn
 
-class UsersApiClient : UsersApi {
-    override suspend fun signIn(token: String) {
-        fetch("POST", "/api/v1/users", token, String.serializer(), UnitSerializer)
+class UsersApiClient {
+    suspend fun signIn(token: String) {
+        return signIn.call(token)
     }
 }

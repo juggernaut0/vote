@@ -10,7 +10,7 @@ import vote.api.*
 import vote.api.v1.*
 import kotlin.browser.window
 
-class VoteService(private val router: Router<Page>, private val api: VoteApi) {
+class VoteService(private val router: Router<Page>, private val api: VoteApiClient) {
     private fun changePage(newPage: Page, id: UUID? = null) {
         val url = when (newPage) {
             Page.RESULTS, Page.DETAILS -> "?results=$id"

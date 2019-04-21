@@ -1,17 +1,12 @@
 package vote.resources
 
-import io.ktor.application.call
 import io.ktor.auth.authenticate
 import io.ktor.features.NotFoundException
-import io.ktor.http.HttpStatusCode
-import io.ktor.response.respond
 import io.ktor.routing.*
 import io.ktor.util.KtorExperimentalAPI
 import kotlinx.coroutines.async
-import kotlinx.serialization.internal.UnitSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.list
-import kotlinx.serialization.serializer
 import vote.api.UUID
 import vote.api.v1.*
 import vote.auth.AuthContext
@@ -24,7 +19,6 @@ import vote.services.PollValidator
 import vote.services.ResultsCalculator
 import vote.util.BadRequestException
 import vote.util.UnauthorizedException
-import vote.util.nullable
 import javax.inject.Inject
 import kotlin.coroutines.coroutineContext
 
@@ -35,67 +29,24 @@ class VoteResource @Inject constructor(
         private val responseQueries: ResponseQueries,
         private val resultsCalculator: ResultsCalculator,
         private val pollValidator: PollValidator
-) : Resource, VoteApi {
+) : Resource {
     override fun register(rt: Route) {
         with (rt) {
             authenticate {
-                get("/polls") {
-                    withAuthContext {
-                        call.respondJson(PollHistory.serializer(), getPollHistory())
-                    }
-                }
-                post("/polls") {
-                    withAuthContext {
-                        val body = call.receiveJson(PollCreateRequest.serializer())
-                        call.respondJson(Poll.serializer(), createPoll(body))
-                    }
-                }
-                get("polls/{id}/creator") {
-                    withAuthContext {
-                        val id = call.parameters.getUUID("id")
-                        call.respondJson(Boolean.serializer(), isCreator(id))
-                    }
-                }
-                get("/polls/{id}/response") {
-                    withAuthContext {
-                        val id = call.parameters.getUUID("id")
-                        call.respondJson(PollResponse.serializer().nullable, getResponse(id))
-                    }
-                }
-                get("/polls/{id}/responses") {
-                    withAuthContext {
-                        val id = call.parameters.getUUID("id")
-                        call.respondJson(PollResponseDetails.serializer().list, getResponses(id))
-                    }
-                }
-                put("/polls/{id}/response") {
-                    withAuthContext {
-                        val id = call.parameters.getUUID("id")
-                        val body = call.receiveJson(PollResponse.serializer())
-                        call.respondJson(UnitSerializer, submitResponse(id, body))
-                    }
-                }
-                delete("/polls/{id}/responses/{respId}") {
-                    withAuthContext {
-                        val pollId = call.parameters.getUUID("id")
-                        val respId = call.parameters.getUUID("respId")
-                        deactivateResponse(pollId, respId)
-                        call.respond(HttpStatusCode.NoContent)
-                    }
-                }
+                handleApi(getPollHistory, withAuth = true) { _ -> getPollHistory() }
+                handleApi(createPoll, withAuth = true) { body, _ -> createPoll(body) }
+                handleApi(isCreator, withAuth = true) { params -> isCreator(params.getUUID("id")) }
+                handleApi(getResponse, withAuth = true) { params -> getResponse(params.getUUID("id")) }
+                handleApi(getResponses, withAuth = true) { params -> getResponses(params.getUUID("id")) }
+                handleApi(submitResponse, withAuth = true) { body, params -> submitResponse(params.getUUID("id"), body) }
+                handleApi(deactivateResponse, withAuth = true) { params -> deactivateResponse(params.getUUID("id"), params.getUUID("respId")) }
             }
-            get("/polls/{id}") {
-                val id = call.parameters.getUUID("id")
-                call.respondJson(Poll.serializer().nullable, getPoll(id))
-            }
-            get("/polls/{id}/results") {
-                val id = call.parameters.getUUID("id")
-                call.respondJson(PollResults.serializer().nullable, getResults(id))
-            }
+            handleApi(getPoll) { params -> getPoll(params.getUUID("id")) }
+            handleApi(getResults) { params -> getResults(params.getUUID("id")) }
         }
     }
 
-    override suspend fun createPoll(pollCreateRequest: PollCreateRequest): Poll {
+    private suspend fun createPoll(pollCreateRequest: PollCreateRequest): Poll {
         val userId = coroutineContext[AuthContext]!!.userId.id
         val validation = pollValidator.validate(pollCreateRequest)
         if (validation.isNotEmpty()) throw BadRequestException(validation.toString())
@@ -109,21 +60,21 @@ class VoteResource @Inject constructor(
         )
     }
 
-    override suspend fun getPoll(id: UUID): Poll? {
+    private suspend fun getPoll(id: UUID): Poll? {
         val pr = db.transaction { q ->
             q.run(pollQueries.getPoll(id))
         }
         return pr?.toApi()
     }
 
-    override suspend fun isCreator(id: UUID): Boolean {
+    private suspend fun isCreator(id: UUID): Boolean {
         val userId = coroutineContext[AuthContext]!!.userId.id
         return db.transaction { q ->
             q.run(pollQueries.getPoll(id))?.createdBy == userId
         }
     }
 
-    override suspend fun getResponse(pollId: UUID): PollResponse? {
+    private suspend fun getResponse(pollId: UUID): PollResponse? {
         val userId = coroutineContext[AuthContext]!!.userId.id
         val resp = db.transaction { q ->
             q.run(responseQueries.getResponse(pollId, userId))
@@ -131,7 +82,7 @@ class VoteResource @Inject constructor(
         return resp?.toApi()
     }
 
-    override suspend fun getResponses(pollId: UUID): List<PollResponseDetails> {
+    private suspend fun getResponses(pollId: UUID): List<PollResponseDetails> {
         val userId = coroutineContext[AuthContext]!!.userId.id
         return db.transaction { q ->
             val poll = q.run(pollQueries.getPoll(pollId)) ?: throw NotFoundException("Poll with ID {$pollId} not found")
@@ -140,7 +91,7 @@ class VoteResource @Inject constructor(
         }
     }
 
-    override suspend fun submitResponse(pollId: UUID, response: PollResponse) {
+    private suspend fun submitResponse(pollId: UUID, response: PollResponse) {
         val userId = coroutineContext[AuthContext]!!.userId.id
         db.transaction { q ->
             val pAsync = async { q.run(pollQueries.getPoll(pollId))?.toApi() }
@@ -159,14 +110,17 @@ class VoteResource @Inject constructor(
         }
     }
 
-    override suspend fun deactivateResponse(pollId: UUID, responseId: UUID) {
+    private suspend fun deactivateResponse(pollId: UUID, responseId: UUID) {
+        val userId = coroutineContext[AuthContext]!!.userId.id
         val success = db.transaction { q ->
+            val poll = q.run(pollQueries.getPoll(pollId)) ?: throw NotFoundException("Poll with ID {$pollId} not found")
+            if (poll.createdBy != userId) throw UnauthorizedException("Cannot deactivate response of a poll you didn't create")
             q.run(responseQueries.deactivateResponse(pollId, responseId))
         }
         if (!success) throw BadRequestException("Response ID {$responseId} does not belong to pollId {$pollId}")
     }
 
-    override suspend fun getResults(pollId: UUID): PollResults? {
+    private suspend fun getResults(pollId: UUID): PollResults? {
         val (poll, resps) = db.transaction { q ->
             val poll = async { q.run(pollQueries.getPoll(pollId)) }
             val resps = async { q.run(responseQueries.getAllActiveResponses(pollId)) }
@@ -176,7 +130,7 @@ class VoteResource @Inject constructor(
         return resultsCalculator.calculateResults(poll.toApi(), resps.map { it.toApi() })
     }
 
-    override suspend fun getPollHistory(): PollHistory {
+    private suspend fun getPollHistory(): PollHistory {
         val userId = coroutineContext[AuthContext]!!.userId.id
         return db.transaction { q ->
             val created = async { q.run(pollQueries.getCreatedPolls(userId)) }

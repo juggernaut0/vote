@@ -2,12 +2,11 @@ package services
 
 import gapi
 import kotlinx.coroutines.await
-import vote.api.v1.UsersApi
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 
-class GoogleSignIn(private val usersApi: UsersApi) {
+class GoogleSignIn(private val usersApi: UsersApiClient) {
     private var auth: Auth2.GoogleAuth? = null
 
     fun isSignedIn() = auth?.isSignedIn?.get() ?: false

@@ -1,53 +1,49 @@
 package services
 
-import kotlinx.serialization.internal.UnitSerializer
-import kotlinx.serialization.list
-import kotlinx.serialization.serializer
 import org.w3c.fetch.Headers
 import vote.api.UUID
 import vote.api.v1.*
-import vote.util.nullable
 
-class VoteApiClient(private val authSupplier: () -> String) : VoteApi {
+class VoteApiClient(private val authSupplier: () -> String) {
     private fun headers(): Headers {
         return Headers().apply {
             append("Authorization", "Bearer ${authSupplier()}")
         }
     }
 
-    override suspend fun getPollHistory(): PollHistory {
-        return fetch("GET", "/api/v1/polls", PollHistory.serializer(), headers = headers())
+    suspend fun getPollHistory(): PollHistory {
+        return getPollHistory.call(headers = headers())
     }
 
-    override suspend fun createPoll(pollCreateRequest: PollCreateRequest): Poll {
-        return fetch("POST", "/api/v1/polls", pollCreateRequest, PollCreateRequest.serializer(), Poll.serializer(), headers = headers())
+    suspend fun createPoll(pollCreateRequest: PollCreateRequest): Poll {
+        return createPoll.call(pollCreateRequest, headers = headers())
     }
 
-    override suspend fun getPoll(id: UUID): Poll? {
-        return fetch("GET", "/api/v1/polls/$id", Poll.serializer().nullable, headers = headers())
+    suspend fun getPoll(id: UUID): Poll? {
+        return getPoll.call(mapOf("id" to id))
     }
 
-    override suspend fun isCreator(id: UUID): Boolean {
-        return fetch("GET", "/api/v1/polls/$id/creator", Boolean.serializer(), headers = headers())
+    suspend fun isCreator(id: UUID): Boolean {
+        return isCreator.call(mapOf("id" to id), headers = headers())
     }
 
-    override suspend fun getResponse(pollId: UUID): PollResponse? {
-        return fetch("GET", "/api/v1/polls/$pollId/response", PollResponse.serializer().nullable, headers = headers())
+    suspend fun getResponse(pollId: UUID): PollResponse? {
+        return getResponse.call(mapOf("id" to pollId), headers = headers())
     }
 
-    override suspend fun getResponses(pollId: UUID): List<PollResponseDetails> {
-        return fetch("GET", "/api/v1/polls/$pollId/responses", PollResponseDetails.serializer().list, headers = headers())
+    suspend fun getResponses(pollId: UUID): List<PollResponseDetails> {
+        return getResponses.call(mapOf("id" to pollId), headers = headers())
     }
 
-    override suspend fun submitResponse(pollId: UUID, response: PollResponse) {
-        return fetch("PUT", "/api/v1/polls/$pollId/response", response, PollResponse.serializer(), UnitSerializer, headers = headers())
+    suspend fun submitResponse(pollId: UUID, response: PollResponse) {
+        return submitResponse.call(response, mapOf("id" to pollId), headers = headers())
     }
 
-    override suspend fun deactivateResponse(pollId: UUID, responseId: UUID) {
-        fetch("DELETE", "/api/v1/polls/$pollId/responses/$responseId", headers = headers())
+    suspend fun deactivateResponse(pollId: UUID, responseId: UUID) {
+        return deactivateResponse.call(mapOf("id" to pollId, "respId" to responseId), headers = headers())
     }
 
-    override suspend fun getResults(pollId: UUID): PollResults? {
-        return fetch("GET", "/api/v1/polls/$pollId/results", PollResults.serializer().nullable, headers = headers())
+    suspend fun getResults(pollId: UUID): PollResults? {
+        return getResults.call(mapOf("id" to pollId))
     }
 }

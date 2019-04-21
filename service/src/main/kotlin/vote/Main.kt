@@ -9,7 +9,6 @@ import io.ktor.features.CallLogging
 import io.ktor.features.StatusPages
 import io.ktor.response.respond
 import io.ktor.routing.Route
-import io.ktor.routing.route
 import io.ktor.routing.routing
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.jetty.Jetty
@@ -41,10 +40,8 @@ fun main() {
             }
         }
         routing {
-            route("/api/v1") {
-                registerRoutes<VoteResource>(injector)
-                registerRoutes<UsersResource>(injector)
-            }
+            registerRoutes<VoteResource>(injector)
+            registerRoutes<UsersResource>(injector)
         }
     }
     server.start(wait = true)
