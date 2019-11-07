@@ -1,11 +1,11 @@
 package vote.api.v1
 
+import juggernaut0.mutliplatform.api.ApiRoute
+import juggernaut0.mutliplatform.api.Method.*
+import juggernaut0.mutliplatform.api.pathOf
 import kotlinx.serialization.internal.UnitSerializer
 import kotlinx.serialization.list
 import kotlinx.serialization.serializer
-import vote.api.Method.*
-import vote.api.ApiRoute
-import vote.api.pathOf
 import vote.util.nullable
 
 val getPollHistory = ApiRoute(GET, pathOf("/api/v1/polls"), PollHistory.serializer())

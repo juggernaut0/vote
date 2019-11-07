@@ -8,8 +8,10 @@ plugins {
 }
 
 repositories {
+    mavenLocal()
     mavenCentral()
     maven("https://kotlin.bintray.com/kotlinx")
+    maven("https://juggernaut0.github.io/m2/repository")
 }
 
 dependencies {
@@ -17,7 +19,7 @@ dependencies {
 
     implementation(kotlin("stdlib-jdk8"))
     
-    val ktorVersion = "1.1.2"
+    val ktorVersion = "1.2.5"
     implementation("io.ktor:ktor-server-core:$ktorVersion")
     implementation("io.ktor:ktor-server-jetty:$ktorVersion")
     implementation("io.ktor:ktor-auth:$ktorVersion")

@@ -10,6 +10,8 @@ import com.google.inject.multibindings.Multibinder
 import com.google.inject.name.Names
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonConfiguration
 import org.apache.http.impl.client.HttpClients
 import vote.config.VoteConfig
 import javax.sql.DataSource
@@ -19,6 +21,7 @@ class VoteModule(private val config: VoteConfig) : AbstractModule() {
         bindInstance(config)
         provide { dataSource() }.asEagerSingleton()
         provide { googleIdTokenVerifier() }.asEagerSingleton()
+        provide { Json(JsonConfiguration.Stable.copy(strictMode = false)) }.asEagerSingleton()
     }
 
     private fun dataSource(): DataSource {

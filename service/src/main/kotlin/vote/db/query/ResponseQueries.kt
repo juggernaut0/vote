@@ -11,8 +11,9 @@ import vote.db.jooq.Tables.RESPONSE
 import vote.db.jooq.Tables.VOTE_USER
 import vote.db.jooq.tables.records.ResponseRecord
 import vote.db.jooq.tables.records.VoteUserRecord
+import javax.inject.Inject
 
-class ResponseQueries {
+class ResponseQueries @Inject constructor(private val json: Json) {
     fun createResponse(pollId: UUID, voterId: UUID, resp: PollResponse) = queryOf { dsl ->
         val id = UUID.randomUUID()
         dsl.newRecord(RESPONSE)
@@ -21,7 +22,7 @@ class ResponseQueries {
                     this.pollId = pollId
                     this.voterId = voterId
                     this.version = 1
-                    this.responses = Json.stringify(Response.serializer().list, resp.responses)
+                    this.responses = json.stringify(Response.serializer().list, resp.responses)
                 }
                 .insertAsync()
                 .await()
@@ -31,7 +32,7 @@ class ResponseQueries {
     fun updateResponse(respId: UUID, resp: PollResponse) = queryOf<Unit> { dsl ->
         dsl.update(RESPONSE)
                 .set(RESPONSE.VERSION, 1)
-                .set(RESPONSE.RESPONSES, Json.stringify(Response.serializer().list, resp.responses))
+                .set(RESPONSE.RESPONSES, json.stringify(Response.serializer().list, resp.responses))
                 .where(RESPONSE.ID.eq(respId))
                 .executeAsync()
                 .await()

@@ -17,7 +17,7 @@ class GoogleTokenAuthProvider @Inject constructor(
         private val verifier: GoogleTokenVerifier,
         private val voteUserQueries: VoteUserQueries,
         private val db: Database
-): AuthenticationProvider() {
+): AuthenticationProvider(object : Configuration(null) {}) {
     suspend fun verify(token: String): UserId? {
         val verified = verifier.verify(token) ?: return null
         val userId = db.transaction { q ->

@@ -6,20 +6,22 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath("org.jetbrains.kotlin:kotlin-serialization:1.3.21")
+        classpath("org.jetbrains.kotlin:kotlin-serialization:1.3.50")
     }
 }
 
 plugins {
-    kotlin("multiplatform").version("1.3.21")
+    kotlin("multiplatform").version("1.3.50")
     id("com.moowork.node").version("1.2.0")
 }
 
 apply(plugin = "kotlinx-serialization")
 
 repositories {
+    mavenLocal()
     jcenter()
-    maven { url = uri("https://kotlin.bintray.com/kotlinx") }
+    maven("https://kotlin.bintray.com/kotlinx")
+    maven("https://juggernaut0.github.io/m2/repository")
 }
 
 kotlin {
@@ -29,19 +31,22 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-runtime-common:0.10.0")
+                implementation("com.github.juggernaut0:multiplatform-utils-metadata:0.1.0")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-runtime-common:0.11.1")
             }
         }
 
         val jvmMain by getting {
             dependencies {
-                api("org.jetbrains.kotlinx:kotlinx-serialization-runtime:0.10.0")
+                api("com.github.juggernaut0:multiplatform-utils-jvm:0.1.0")
+                api("org.jetbrains.kotlinx:kotlinx-serialization-runtime:0.11.1")
             }
         }
 
         val jsMain by getting {
             dependencies {
-                api("org.jetbrains.kotlinx:kotlinx-serialization-runtime-js:0.10.0")
+                api("com.github.juggernaut0:multiplatform-utils-js:0.1.0")
+                api("org.jetbrains.kotlinx:kotlinx-serialization-runtime-js:0.11.1")
             }
         }
 

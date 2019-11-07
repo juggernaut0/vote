@@ -1,6 +1,7 @@
 package vote.resources
 
 import io.ktor.routing.Route
+import juggernaut0.multiplatform.ktor.handleApi
 import vote.api.v1.signIn
 import vote.db.Database
 import vote.db.query.VoteUserQueries
@@ -14,7 +15,7 @@ class UsersResource @Inject constructor(
         private val tokenVerifier: GoogleTokenVerifier
 ) : Resource {
     override fun register(rt: Route) {
-        rt.handleApi(signIn) { body, _ -> signIn(body) }
+        rt.handleApi(signIn) { body -> signIn(body) }
     }
 
     private suspend fun signIn(token: String) {

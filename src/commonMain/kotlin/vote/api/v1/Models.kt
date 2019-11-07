@@ -1,16 +1,15 @@
-// cannot use this because JS will not compile with it
-//@file:UseSerializers(UUIDSerializer::class)
+@file:UseSerializers(UUIDSerializer::class)
 
 package vote.api.v1
 
-import kotlinx.serialization.Optional
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.UseSerializers
 import vote.api.UUID
 import vote.api.UUIDSerializer
 
 @Serializable
 data class Poll(
-        @Serializable(with = UUIDSerializer::class) val id: UUID,
+        val id: UUID,
         val title: String,
         val questions: List<Question>
 )
@@ -57,7 +56,7 @@ data class PollResponse(
 
 @Serializable
 data class PollResponseDetails(
-        @Serializable(with = UUIDSerializer::class) val id: UUID,
+        val id: UUID,
         val email: String,
         val active: Boolean,
         val responses: List<Response>
@@ -65,9 +64,9 @@ data class PollResponseDetails(
 
 @Serializable
 data class Response internal constructor(
-        @Optional val freeform: String? = null,
-        @Optional val multiFreeform: List<String>? = null,
-        @Optional val selections: List<Int>? = null
+        val freeform: String? = null,
+        val multiFreeform: List<String>? = null,
+        val selections: List<Int>? = null
 ) {
     companion object {
         fun freeform(response: String) = Response(freeform = response)

@@ -10,8 +10,9 @@ import vote.db.jooq.Tables.POLL
 import vote.db.jooq.Tables.RESPONSE
 import vote.db.jooq.tables.records.PollRecord
 import java.time.OffsetDateTime
+import javax.inject.Inject
 
-class PollQueries {
+class PollQueries @Inject constructor(private val json: Json) {
     fun createPoll(title: String, questions: List<Question>, createdBy: UUID) = queryOf { dsl ->
         val id = UUID.randomUUID()
         dsl.newRecord(POLL)
@@ -19,7 +20,7 @@ class PollQueries {
                     this.id = id
                     this.title = title
                     this.version = 1
-                    this.questions = Json.stringify(Question.serializer().list, questions)
+                    this.questions = json.stringify(Question.serializer().list, questions)
                     this.createdBy = createdBy
                     this.createdDt = OffsetDateTime.now()
                 }
