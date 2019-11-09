@@ -32,6 +32,7 @@ object QuestionType {
     const val FREEFORM = "FREEFORM"
     const val SELECT = "SELECT"
     const val RANKED = "RANKED"
+    const val RANGE = "RANGE"
 }
 
 object FreeformSubtype {

@@ -20,9 +20,8 @@ class AnswerPanel(private val question: Question, existing: Response?) : Compone
                 SelectManyAnswer(genName(), question.options, existing?.selections.orEmpty().toSet())
             }
         }
-        QuestionType.RANKED -> {
-            RankedAnswer(question.options, existing?.selections.orEmpty())
-        }
+        QuestionType.RANKED -> RankedAnswer(question.options, existing?.selections.orEmpty())
+        QuestionType.RANGE -> RangeAnswer(question.options, existing?.selections ?: List(question.options.size) { 50 })
         else -> throw IllegalArgumentException("Unknown type: $t")
     }
 

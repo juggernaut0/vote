@@ -63,7 +63,8 @@ class VoteService(private val router: Router<Page>, private val api: VoteApiClie
         val resps = when {
             !response.freeform.isNullOrBlank() -> listOf(response.freeform!!)
             !response.multiFreeform.isNullOrEmpty() -> response.multiFreeform!!
-            !response.selections.isNullOrEmpty() -> response.selections!!.map { i -> question.options[i] }
+            question.type != QuestionType.RANGE && !response.selections.isNullOrEmpty() -> response.selections!!.map { i -> question.options[i] }
+            question.type == QuestionType.RANGE && !response.selections.isNullOrEmpty() -> response.selections!!.zip(question.options) { value, opt -> "$value - $opt" }
             else -> emptyList()
         }
         return ResponseDetailsQuestion(

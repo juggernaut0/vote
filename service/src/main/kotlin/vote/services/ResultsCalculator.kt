@@ -3,6 +3,7 @@ package vote.services
 import org.slf4j.LoggerFactory
 import vote.api.UUID
 import vote.api.v1.*
+import kotlin.math.roundToInt
 import kotlin.random.Random
 
 class ResultsCalculator {
@@ -14,6 +15,7 @@ class ResultsCalculator {
                 QuestionType.FREEFORM -> summarizeFreeform(q, resps)
                 QuestionType.SELECT -> summarizeSelect(q, resps)
                 QuestionType.RANKED -> summarizeRanked(q, resps, poll.id)
+                QuestionType.RANGE -> summarizeRange(q, resps)
                 else -> {
                     log.warn("Unknown question type ${q.type}")
                     Result(0)
@@ -97,6 +99,13 @@ class ResultsCalculator {
             }
         }
         return Result(selections.size, votes = votes.asList())
+    }
+
+    private fun summarizeRange(question: Question, responses: List<Response>): Result {
+        val size = question.options.size
+        val validResponses = responses.mapNotNull { r -> r.selections?.takeIf { it.size == size } }
+        val results = List(size) { i -> validResponses.map { it[i] }.average().roundToInt() }
+        return Result(validResponses.size, votes = results)
     }
 
     private inline fun <T, R : Comparable<R>> Iterable<T>.minSetBy(selector: (T) -> R): Set<T> {

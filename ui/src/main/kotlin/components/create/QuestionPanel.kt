@@ -69,7 +69,9 @@ class QuestionPanel(private val createPage: CreatePage) : Component() {
         SELECT_ONE(QuestionType.SELECT, SelectSubtype.SELECT_ONE),
         SELECT_MANY(QuestionType.SELECT, SelectSubtype.SELECT_MANY),
         BORDA_COUNT(QuestionType.RANKED, RankedSubtype.BORDA_COUNT),
-        INSTANT_RUNOFF(QuestionType.RANKED, RankedSubtype.INSTANT_RUNOFF);
+        INSTANT_RUNOFF(QuestionType.RANKED, RankedSubtype.INSTANT_RUNOFF),
+        RANGE_VOTING(QuestionType.RANGE, ""),
+        ;
 
         override fun toString(): String {
             return name.split('_').joinToString(separator = " ") { it.toLowerCase().capitalize() }

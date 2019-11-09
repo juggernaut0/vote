@@ -10,7 +10,6 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.list
 import vote.api.UUID
 import vote.api.v1.*
-import vote.auth.AuthContext
 import vote.auth.UserId
 import vote.db.Database
 import vote.db.jooq.tables.records.PollRecord

@@ -21,7 +21,7 @@ class VoteModule(private val config: VoteConfig) : AbstractModule() {
         bindInstance(config)
         provide { dataSource() }.asEagerSingleton()
         provide { googleIdTokenVerifier() }.asEagerSingleton()
-        provide { Json(JsonConfiguration.Stable.copy(strictMode = false)) }.asEagerSingleton()
+        provide { Json(JsonConfiguration.Stable.copy(strictMode = false, encodeDefaults = false)) }.asEagerSingleton()
     }
 
     private fun dataSource(): DataSource {

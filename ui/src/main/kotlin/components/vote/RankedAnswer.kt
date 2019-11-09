@@ -32,6 +32,7 @@ class RankedAnswer(private val options: List<String>, ranked: List<Int>) : Answe
         markup().div(classes("row")) {
             div(classes("col-12")) {
                 p { +"Click to rank items (highest to lowest)" }
+                em { +"All options must be ranked for your vote to count" }
             }
             div(classes("col-6")) {
                 div(classes("list-group")) {
