@@ -2,6 +2,8 @@ package vote
 
 import auth.token
 import com.google.inject.Guice
+import com.typesafe.config.ConfigFactory
+import io.github.config4k.extract
 import io.ktor.application.*
 import io.ktor.auth.Authentication
 import io.ktor.client.*
@@ -23,18 +25,19 @@ import javax.inject.Inject
 import javax.inject.Named
 
 fun main() {
-    val config = VoteConfig.fromEnv()
+    val config = ConfigFactory.load().extract<VoteConfig>()
     runMigrations(DataSourceConfig(config.data.jdbcUrl, config.data.user, config.data.password))
     val injector = Guice.createInjector(VoteModule(config))
     injector.getInstance(VoteApp::class.java).start()
 }
 
 class VoteApp @Inject constructor(
+    private val config: VoteConfig,
     private val voteResource: VoteResource,
     @Named("authClient") private val authClient: HttpClient,
 ) {
     fun start() {
-        val server = embeddedServer(Jetty, 9003) {
+        val server = embeddedServer(Jetty, config.app.port) {
             install(CallLogging) {
                 level = Level.INFO
             }

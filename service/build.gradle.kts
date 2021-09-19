@@ -30,6 +30,8 @@ dependencies {
 
     implementation("dev.twarner.auth:auth-common:7")
 
+    implementation("io.github.config4k:config4k:0.4.2")
+
     testImplementation(kotlin("test-junit"))
 }
 
@@ -101,7 +103,7 @@ tasks {
     }
 
     (run) {
-        systemProperty("config.file", "local.conf")
+        environment(projectDir.resolve("local.env").readLines().associate { line -> line.split('=', limit = 2).let { it[0] to it[1] } })
     }
 
     val copyDist by registering(Copy::class) {

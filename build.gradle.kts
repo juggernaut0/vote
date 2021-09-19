@@ -4,5 +4,5 @@ plugins {
 }
 
 subprojects {
-    version = "1"
+    version = "2"
 }
