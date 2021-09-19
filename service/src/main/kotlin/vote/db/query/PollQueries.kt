@@ -1,15 +1,16 @@
 package vote.db.query
 
 import kotlinx.coroutines.future.await
+import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.list
-import vote.api.UUID
+import org.jooq.JSONB
 import vote.api.v1.Question
 import vote.db.insertAsync
 import vote.db.jooq.Tables.POLL
 import vote.db.jooq.Tables.RESPONSE
 import vote.db.jooq.tables.records.PollRecord
 import java.time.OffsetDateTime
+import java.util.*
 import javax.inject.Inject
 
 class PollQueries @Inject constructor(private val json: Json) {
@@ -20,7 +21,7 @@ class PollQueries @Inject constructor(private val json: Json) {
                     this.id = id
                     this.title = title
                     this.version = 1
-                    this.questions = json.stringify(Question.serializer().list, questions)
+                    this.questions = JSONB.valueOf(json.encodeToString(ListSerializer(Question.serializer()), questions))
                     this.createdBy = createdBy
                     this.createdDt = OffsetDateTime.now()
                 }

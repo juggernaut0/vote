@@ -1,8 +1,5 @@
 package vote.inject
 
-import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier
-import com.google.api.client.http.apache.ApacheHttpTransport
-import com.google.api.client.json.jackson2.JacksonFactory
 import com.google.inject.AbstractModule
 import com.google.inject.Provider
 import com.google.inject.TypeLiteral
@@ -10,9 +7,10 @@ import com.google.inject.multibindings.Multibinder
 import com.google.inject.name.Names
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
+import io.ktor.client.*
+import io.ktor.client.engine.apache.*
+import io.ktor.client.features.*
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonConfiguration
-import org.apache.http.impl.client.HttpClients
 import vote.config.VoteConfig
 import javax.sql.DataSource
 
@@ -20,8 +18,8 @@ class VoteModule(private val config: VoteConfig) : AbstractModule() {
     override fun configure() {
         bindInstance(config)
         provide { dataSource() }.asEagerSingleton()
-        provide { googleIdTokenVerifier() }.asEagerSingleton()
-        provide { Json(JsonConfiguration.Stable.copy(strictMode = false, encodeDefaults = false)) }.asEagerSingleton()
+        provide { Json { ignoreUnknownKeys = true; encodeDefaults = false } }.asEagerSingleton()
+        bindInstance("authClient", authClient())
     }
 
     private fun dataSource(): DataSource {
@@ -35,13 +33,13 @@ class VoteModule(private val config: VoteConfig) : AbstractModule() {
         return HikariDataSource(config)
     }
 
-    private fun googleIdTokenVerifier(): GoogleIdTokenVerifier {
-        return GoogleIdTokenVerifier.Builder(
-                ApacheHttpTransport(HttpClients.createDefault()),
-                JacksonFactory()
-        )
-                .setAudience(listOf(config.signIn.clientId))
-                .build()
+    private fun authClient(): HttpClient {
+        return HttpClient(Apache) {
+            defaultRequest {
+                url.host = config.auth.host
+                config.auth.port?.let { url.port = it }
+            }
+        }
     }
 
     private inline fun <reified T> bindInstance(instance: T, typeLiteral: Boolean = false) = bindInstance(null, instance, typeLiteral)

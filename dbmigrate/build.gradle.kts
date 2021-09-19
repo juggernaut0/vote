@@ -10,10 +10,16 @@ repositories {
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
 
-    implementation("org.postgresql:postgresql:42.2.5")
-    implementation("org.flywaydb:flyway-core:5.2.4")
+    implementation("org.postgresql:postgresql:42.2.23")
+    implementation("org.flywaydb:flyway-core:7.15.0")
 }
 
 application {
-    mainClassName = "vote.db.MigrateKt"
+    mainClass.set("vote.db.MigrateKt")
+}
+
+tasks {
+    (run) {
+        args = listOf("postgres://vote:vote@localhost:6432/vote")
+    }
 }

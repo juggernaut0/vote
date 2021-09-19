@@ -1,16 +1,15 @@
 package vote.db.query
 
 import kotlinx.coroutines.future.await
+import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.list
-import vote.api.UUID
+import org.jooq.JSONB
 import vote.api.v1.PollResponse
 import vote.api.v1.Response
 import vote.db.insertAsync
 import vote.db.jooq.Tables.RESPONSE
-import vote.db.jooq.Tables.VOTE_USER
 import vote.db.jooq.tables.records.ResponseRecord
-import vote.db.jooq.tables.records.VoteUserRecord
+import java.util.*
 import javax.inject.Inject
 
 class ResponseQueries @Inject constructor(private val json: Json) {
@@ -22,7 +21,7 @@ class ResponseQueries @Inject constructor(private val json: Json) {
                     this.pollId = pollId
                     this.voterId = voterId
                     this.version = 1
-                    this.responses = json.stringify(Response.serializer().list, resp.responses)
+                    this.responses = JSONB.valueOf(json.encodeToString(ListSerializer(Response.serializer()), resp.responses))
                 }
                 .insertAsync()
                 .await()
@@ -32,7 +31,7 @@ class ResponseQueries @Inject constructor(private val json: Json) {
     fun updateResponse(respId: UUID, resp: PollResponse) = queryOf<Unit> { dsl ->
         dsl.update(RESPONSE)
                 .set(RESPONSE.VERSION, 1)
-                .set(RESPONSE.RESPONSES, json.stringify(Response.serializer().list, resp.responses))
+                .set(RESPONSE.RESPONSES, JSONB.valueOf(json.encodeToString(ListSerializer(Response.serializer()), resp.responses)))
                 .where(RESPONSE.ID.eq(respId))
                 .executeAsync()
                 .await()
@@ -46,12 +45,11 @@ class ResponseQueries @Inject constructor(private val json: Json) {
                 .await()
     }
 
-    fun getAllResponsesWithUsers(pollId: UUID) = queryOf<List<Pair<ResponseRecord, VoteUserRecord>>> { dsl ->
-        dsl.select().from(RESPONSE.join(VOTE_USER).onKey())
+    fun getAllResponsesWithUsers(pollId: UUID) = queryOf<List<ResponseRecord>> { dsl ->
+        dsl.selectFrom(RESPONSE)
                 .where(RESPONSE.POLL_ID.eq(pollId))
                 .fetchAsync()
                 .await()
-                .map { it.into(RESPONSE) to it.into(VOTE_USER) }
     }
 
     fun getResponse(pollId: UUID, voterId: UUID) = queryOf { dsl ->

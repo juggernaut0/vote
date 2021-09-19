@@ -1,53 +1,130 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import com.bmuschko.gradle.docker.tasks.image.DockerBuildImage
+import com.bmuschko.gradle.docker.tasks.image.Dockerfile
 
 plugins {
     kotlin("jvm")
     java
     application
-    id("nu.studer.jooq").version("3.0.3")
-}
-
-repositories {
-    mavenLocal()
-    mavenCentral()
-    maven("https://kotlin.bintray.com/kotlinx")
-    maven("https://juggernaut0.github.io/m2/repository")
+    id("nu.studer.jooq")
+    id("com.bmuschko.docker-remote-api")
 }
 
 dependencies {
-    implementation(project(":"))
+    implementation(project(":common"))
+    implementation(project(":dbmigrate"))
 
     implementation(kotlin("stdlib-jdk8"))
     
-    val ktorVersion = "1.2.5"
+    val ktorVersion = "1.6.3"
     implementation("io.ktor:ktor-server-core:$ktorVersion")
     implementation("io.ktor:ktor-server-jetty:$ktorVersion")
-    implementation("io.ktor:ktor-auth:$ktorVersion")
+    implementation("io.ktor:ktor-client-apache:$ktorVersion")
 
-    implementation("com.google.inject:guice:4.2.2:no_aop")
+    implementation("com.google.inject:guice:5.0.1")
 
-    implementation("ch.qos.logback:logback-classic:1.2.3")
+    implementation("ch.qos.logback:logback-classic:1.2.6")
 
-    implementation("org.postgresql:postgresql:42.2.5")
-    implementation("org.flywaydb:flyway-core:5.2.4")
-    implementation("org.jooq:jooq:3.11.9")
-    jooqRuntime("org.postgresql:postgresql:42.2.5")
-    implementation("com.zaxxer:HikariCP:3.2.0")
+    implementation("org.postgresql:postgresql:42.2.23")
+    jooqGenerator("org.postgresql:postgresql:42.2.5")
+    implementation("com.zaxxer:HikariCP:5.0.0")
 
-    implementation("com.google.api-client:google-api-client:1.28.0")
+    implementation("dev.twarner.auth:auth-common:7")
 
     testImplementation(kotlin("test-junit"))
 }
 
+kotlin {
+    target {
+        compilations.all {
+            kotlinOptions.jvmTarget = "11"
+        }
+    }
+}
+
 application {
-    mainClassName = "vote.MainKt"
+    mainClass.set("vote.MainKt")
 }
 
-tasks.withType<KotlinCompile>().forEach {
-    it.kotlinOptions.jvmTarget = "1.8"
-    it.dependsOn("generatePostgresJooqSchemaSource")
+jooq {
+    configurations {
+        create("main") {
+            version.set("3.15.2")
+            generateSchemaSourceOnCompilation.set(true)
+            jooqConfiguration.apply {
+                jdbc.apply {
+                    driver = "org.postgresql.Driver"
+                    url = "jdbc:postgresql://localhost:6432/vote"
+                    user = "vote"
+                    password = "vote"
+                }
+                generator.apply {
+                    name = "org.jooq.codegen.DefaultGenerator"
+                    strategy.apply {
+                        name = "org.jooq.codegen.DefaultGeneratorStrategy"
+                    }
+                    database.apply {
+                        name = "org.jooq.meta.postgres.PostgresDatabase"
+                        inputSchema = "public"
+                        includes = ".*"
+                        excludes = "flyway_schema_history"
+                    }
+                    generate.apply {
+                        isRelations = true
+                        isDeprecated = false
+                        isRecords = true
+                        isFluentSetters = false
+                    }
+                    target.apply {
+                        packageName = "vote.db.jooq"
+                        directory = "build/generated/source/jooq/main"
+                    }
+                }
+            }
+        }
+    }
 }
 
-apply {
-    from("jooq.gradle")
+tasks {
+    val copyWeb by registering(Copy::class) {
+        if (version.toString().endsWith("SNAPSHOT")) {
+            dependsOn(":web:browserDevelopmentWebpack")
+        } else {
+            dependsOn(":web:browserProductionWebpack")
+        }
+        group = "build"
+        from(project(":web").buildDir.resolve("distributions"))
+        into(processResources.map { it.destinationDir.resolve("static") })
+    }
+
+    classes {
+        dependsOn(copyWeb)
+    }
+
+    (run) {
+        systemProperty("config.file", "local.conf")
+    }
+
+    val copyDist by registering(Copy::class) {
+        dependsOn(distTar)
+        from(distTar.flatMap { it.archiveFile })
+        into("$buildDir/docker")
+    }
+
+    val dockerfile by registering(Dockerfile::class) {
+        dependsOn(copyDist)
+
+        from("openjdk:11-jre-slim")
+        addFile(distTar.flatMap { it.archiveFileName }.map { Dockerfile.File(it, "/app/") })
+        defaultCommand(distTar.flatMap { it.archiveFile }.map { it.asFile.nameWithoutExtension }.map { listOf("/app/$it/bin/${project.name}") })
+    }
+
+    val dockerBuild by registering(DockerBuildImage::class) {
+        dependsOn(dockerfile)
+
+        if (version.toString().endsWith("SNAPSHOT")) {
+            images.add("${rootProject.name}:SNAPSHOT")
+        } else {
+            images.add("juggernaut0/${rootProject.name}:$version")
+        }
+    }
 }

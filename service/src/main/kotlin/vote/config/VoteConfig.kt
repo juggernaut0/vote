@@ -1,19 +1,20 @@
 package vote.config
 
 import org.jooq.SQLDialect
-import java.lang.RuntimeException
 import java.net.URI
 
-class VoteConfig(val data: DataConfig, val signIn: SignInConfig) {
+class VoteConfig(val auth: AuthConfig, val data: DataConfig) {
     companion object {
         fun fromEnv(): VoteConfig {
             return VoteConfig(
-                    data = DataConfig.fromEnv(),
-                    signIn = SignInConfig.fromEnv()
+                auth = AuthConfig("localhost", 9001),
+                data = DataConfig.fromEnv(),
             )
         }
     }
 }
+
+class AuthConfig(val host: String, val port: Int?)
 
 class DataConfig(
         val user: String,
@@ -35,29 +36,17 @@ class DataConfig(
                         password = pass,
                         jdbcUrl = url,
                         dataSourceClassName = "org.postgresql.ds.PGSimpleDataSource",
-                        sqlDialect = SQLDialect.POSTGRES_10
+                        sqlDialect = SQLDialect.POSTGRES
                 )
             } else {
                 DataConfig(
                         user = "vote",
                         password = "vote",
-                        jdbcUrl = "jdbc:postgresql://localhost:5432/vote",
+                        jdbcUrl = "jdbc:postgresql://localhost:6432/vote",
                         dataSourceClassName = "org.postgresql.ds.PGSimpleDataSource",
-                        sqlDialect = SQLDialect.POSTGRES_10
+                        sqlDialect = SQLDialect.POSTGRES
                 )
             }
-        }
-    }
-}
-
-class SignInConfig(
-        val clientId: String
-) {
-    companion object {
-        fun fromEnv(): SignInConfig {
-            val env: String = System.getenv("GOOGLE_SIGNIN_CLIENT_ID")
-                    ?: throw RuntimeException("No google signin client id set")
-            return SignInConfig(env)
         }
     }
 }

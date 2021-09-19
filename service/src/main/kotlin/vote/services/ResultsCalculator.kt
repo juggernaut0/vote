@@ -1,8 +1,8 @@
 package vote.services
 
 import org.slf4j.LoggerFactory
-import vote.api.UUID
 import vote.api.v1.*
+import java.util.*
 import kotlin.math.roundToInt
 import kotlin.random.Random
 
@@ -28,7 +28,7 @@ class ResultsCalculator {
 
     private fun summarizeFreeform(question: Question, responses: List<Response>): Result {
         return when (question.subtype) {
-            FreeformSubtype.MUTLI -> {
+            FreeformSubtype.MULTI -> {
                 val rs = responses.mapNotNull { r -> r.multiFreeform?.takeUnless { it.isEmpty() } }
                 Result(rs.size, freeform = rs.flatten())
             }
