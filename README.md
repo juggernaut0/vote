@@ -1,27 +1,16 @@
 # SoVote
 
-One-time setup: `./gradlew npmInstall`
+To start/restart Postgres and run migrations: `./drop_and_migrate.sh`
 
-To start Postgres and run migrations: `./start_db.sh`
-
-To start Nginx: `./start_web.sh`. Make sure *not* to `:ui:clean` while 
-Nginx is running, or else it will start returning errors.
-
-To generate jooq classes, make sure DB is up and migrated. Then run 
-`./gradlew generatePostgresJooqSchemaSource`
+To generate jooq classes, make sure DB is up and migrated. Then run `./gradlew generateJooq`
 
 To run tests: `./gradlew build`
 
-To build web: `./gradlew webpack`.
+To run the server for development: `./gradlew :service:run`
 
-To create production-ready builds: `./gradlew build 
-webpackMin installDist`. UI files are output in `ui/build/web` and 
-service files are output in `service/build/install/service`.
+To create production-ready builds: `./gradlew clean build dockerBuild`
 
-## Environment
-
-In order to run the service, you must have a `GOOGLE_SIGNIN_CLIENT_ID` 
-variable set to the same value as used in the UI.
+Relies on https://github.com/juggernaut0/auth for auth.
 
 ## TODO
 * Add option to show poll creators email

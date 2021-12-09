@@ -13,6 +13,8 @@ import kotlinx.browser.window
 import multiplatform.api.FetchClient
 
 fun main() {
+    AuthPanel.Styles.apply()
+
     val search = URLSearchParams(window.location.search)
     val initPage = when {
         search.get("vote") != null -> Page.VOTE
