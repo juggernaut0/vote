@@ -15,17 +15,17 @@ dependencies {
 
     implementation(kotlin("stdlib-jdk8"))
     
-    val ktorVersion = "1.6.3"
+    val ktorVersion = "1.6.7"
     implementation("io.ktor:ktor-server-core:$ktorVersion")
     implementation("io.ktor:ktor-server-jetty:$ktorVersion")
     implementation("io.ktor:ktor-client-apache:$ktorVersion")
 
     implementation("com.google.inject:guice:5.0.1")
 
-    implementation("ch.qos.logback:logback-classic:1.2.6")
+    implementation("ch.qos.logback:logback-classic:1.2.9")
 
-    implementation("org.postgresql:postgresql:42.2.23")
-    jooqGenerator("org.postgresql:postgresql:42.2.5")
+    implementation("org.postgresql:postgresql:42.3.1")
+    jooqGenerator("org.postgresql:postgresql:42.3.1")
     implementation("com.zaxxer:HikariCP:5.0.0")
 
     implementation("dev.twarner.auth:auth-common:7")
