@@ -18,7 +18,7 @@ kotlin {
     }
 
     sourceSets {
-        val multiplatformUtilsVersion = "0.6.4"
+        val multiplatformUtilsVersion = "0.6.5"
 
         commonMain {
             dependencies {
