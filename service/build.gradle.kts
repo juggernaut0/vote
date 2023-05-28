@@ -20,7 +20,7 @@ dependencies {
     implementation("io.ktor:ktor-server-jetty:$ktorVersion")
     implementation("io.ktor:ktor-client-apache:$ktorVersion")
 
-    implementation("com.google.inject:guice:5.0.1")
+    implementation("com.google.inject:guice:7.0.0")
 
     implementation("ch.qos.logback:logback-classic:1.2.9")
 
