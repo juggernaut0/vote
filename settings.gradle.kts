@@ -11,7 +11,7 @@ dependencyResolutionManagement {
 
 pluginManagement {
     plugins {
-        id("nu.studer.jooq") version "6.0.1"
+        id("nu.studer.jooq") version "8.2.3"
         id("com.bmuschko.docker-remote-api") version "7.1.0"
     }
 }
