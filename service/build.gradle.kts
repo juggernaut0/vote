@@ -15,7 +15,7 @@ dependencies {
 
     implementation(kotlin("stdlib-jdk8"))
     
-    val ktorVersion = "1.6.7"
+    val ktorVersion = "2.3.8"
     implementation("io.ktor:ktor-server-core:$ktorVersion")
     implementation("io.ktor:ktor-server-jetty:$ktorVersion")
     implementation("io.ktor:ktor-client-apache:$ktorVersion")
