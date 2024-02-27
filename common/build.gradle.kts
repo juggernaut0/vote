@@ -1,34 +1,20 @@
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
+    id("dev.twarner.common")
 }
 
 kotlin {
     jvm()
-    js {
-        browser {
-            compilations.all {
-                kotlinOptions {
-                    moduleKind = "commonjs"
-                    sourceMap = true
-                    sourceMapEmbedSources = "always"
-                }
-            }
-        }
+    js(IR) {
+        browser()
+        binaries.executable()
     }
 
     sourceSets {
-        val multiplatformUtilsVersion = "0.6.5"
-
         commonMain {
             dependencies {
-                implementation("com.github.juggernaut0:multiplatform-utils:$multiplatformUtilsVersion")
-            }
-        }
-
-        named("jvmMain") {
-            dependencies {
-                api("com.github.juggernaut0:multiplatform-utils-ktor-jvm:$multiplatformUtilsVersion")
+                api(libs.multiplatformUtils)
             }
         }
     }

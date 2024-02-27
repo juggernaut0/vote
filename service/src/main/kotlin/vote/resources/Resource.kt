@@ -1,7 +1,7 @@
 package vote.resources
 
-import io.ktor.routing.Route
+import io.javalin.Javalin
 
 interface Resource {
-    fun register(rt: Route)
+    fun register(app: Javalin)
 }

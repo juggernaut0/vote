@@ -6,7 +6,7 @@ class VoteConfig(val app: AppConfig, val auth: AuthConfig, val data: DataConfig)
 
 class AppConfig(val port: Int)
 
-class AuthConfig(val host: String, val port: Int?)
+class AuthConfig(val host: String, val port: Int?, val mock: Boolean)
 
 class DataConfig(
     val user: String,

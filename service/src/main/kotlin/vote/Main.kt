@@ -1,24 +1,16 @@
 package vote
 
-import auth.token
-import com.google.inject.Guice
+import auth.javalin.MockAuthHandler
+import auth.javalin.TokenAuthProvider
 import com.typesafe.config.ConfigFactory
 import io.github.config4k.extract
-import io.ktor.application.*
-import io.ktor.auth.Authentication
-import io.ktor.client.*
-import io.ktor.features.CallLogging
-import io.ktor.features.StatusPages
-import io.ktor.http.content.*
-import io.ktor.response.*
-import io.ktor.routing.*
-import io.ktor.server.engine.embeddedServer
-import io.ktor.server.jetty.Jetty
-import multiplatform.ktor.installWebApplicationExceptionHandler
-import org.slf4j.event.Level
+import io.javalin.Javalin
+import multiplatform.api.BlockingApiClient
+import multiplatform.javalin.AuthenticationPlugin
+import org.slf4j.LoggerFactory
 import vote.config.VoteConfig
-import vote.db.DataSourceConfig
-import vote.db.runMigrations
+import vote.db.DbMigration.runMigrations
+import vote.inject.DaggerVoteInjector
 import vote.inject.VoteModule
 import vote.resources.VoteResource
 import javax.inject.Inject
@@ -26,37 +18,39 @@ import javax.inject.Named
 
 fun main() {
     val config = ConfigFactory.load().extract<VoteConfig>()
-    runMigrations(DataSourceConfig(config.data.jdbcUrl, config.data.user, config.data.password))
-    val injector = Guice.createInjector(VoteModule(config))
-    injector.getInstance(VoteApp::class.java).start()
+    runMigrations(config.data.jdbcUrl, config.data.user, config.data.password)
+    val injector = DaggerVoteInjector.builder().voteModule(VoteModule(config)).build()
+    injector.app().app().start(config.app.port)
 }
 
 class VoteApp @Inject constructor(
     private val config: VoteConfig,
     private val voteResource: VoteResource,
-    @Named("authClient") private val authClient: HttpClient,
+    @Named("authClient") private val authClient: BlockingApiClient,
 ) {
-    fun start() {
-        val server = embeddedServer(Jetty, config.app.port) {
-            install(CallLogging) {
-                level = Level.INFO
-            }
-            install(Authentication) {
-                token(httpClient = authClient)
-            }
-            install(StatusPages) {
-                installWebApplicationExceptionHandler()
-            }
-            routing {
-                voteResource.register(this)
-                get("vote") { call.respondRedirect("vote/", permanent = true) }
-                route("vote/") {
-                    staticBasePackage = "static"
-                    resources()
-                    defaultResource("index.html")
+    private val log = LoggerFactory.getLogger(VoteApp::class.java)
+
+    fun app(): Javalin {
+        return Javalin
+            .create { javalinConfig ->
+                javalinConfig.useVirtualThreads = true
+                javalinConfig.requestLogger.http { ctx, dur ->
+                    val pathWithQuery = ctx.path() + ctx.queryString()?.let { "?$it" }.orEmpty()
+                    log.info("${ctx.status()}: ${ctx.method()} - $pathWithQuery in ${dur.toInt()}ms")
+                }
+                javalinConfig.registerPlugin(AuthenticationPlugin {
+                    register(TokenAuthProvider(authClient))
+                })
+                javalinConfig.staticFiles.add { staticFiles ->
+                    staticFiles.directory = "/static"
+                    staticFiles.hostedPath = "/vote"
                 }
             }
-        }
-        server.start(wait = true)
+            .also {
+                voteResource.register(it)
+                if (config.auth.mock) {
+                    MockAuthHandler().registerRoutes(it)
+                }
+            }
     }
 }

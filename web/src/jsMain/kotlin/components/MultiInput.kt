@@ -3,8 +3,12 @@ package components
 import kui.*
 import util.X
 
-class MultiInput(initial: List<String> = emptyList(), private val placeholder: String? = null) : Component() {
-    private val items: MutableList<Item> = initial.mapTo(mutableListOf()) { Item(it) }.also { it.add(Item()) }
+class MultiInput(
+    initial: List<String> = emptyList(),
+    private val placeholder: String? = null,
+) : Component() {
+    private var newItemId = initial.size
+    private val items: MutableList<Item> = initial.mapIndexedTo(mutableListOf()) { i, v -> Item(i, v) }.also { it.add(Item(newItemId++)) }
 
     fun getValues(): List<String> = items.mapNotNull { item -> item.text.takeUnless { it.isBlank() } }
 
@@ -16,12 +20,12 @@ class MultiInput(initial: List<String> = emptyList(), private val placeholder: S
         }
     }
 
-    private inner class Item(text: String = "") : Component() {
+    private inner class Item(private val index: Int, text: String = "") : Component() {
         var text: String = text
             private set(value) {
                 val renderTarget =
                         if (field.isBlank() && value.isNotBlank() && isLast()) {
-                            items.add(Item())
+                            items.add(Item(newItemId++))
                             this@MultiInput
                         } else {
                             this
@@ -41,7 +45,10 @@ class MultiInput(initial: List<String> = emptyList(), private val placeholder: S
         }
 
         override fun render() {
-            markup().li(classes("list-group-item", "d-flex")) {
+            // id is used so that kui consistently renders the same item in the same position
+            // otherwise focus would jump around as items are added and removed
+            // Yes I know id is not unique if there are multiple MultiInputs on the page
+            markup().li(Props(id = index.toString(), classes = listOf("list-group-item", "d-flex"))) {
                 inputText(
                         Props(
                                 classes = listOf("form-control", "flex-grow-1"),

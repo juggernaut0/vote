@@ -1,17 +1,22 @@
-include("dbmigrate", "common", "service", "web")
-rootProject.name = "vote"
-
-dependencyResolutionManagement {
+pluginManagement {
     repositories {
         mavenLocal()
+        gradlePluginPortal()
         mavenCentral()
         maven("https://juggernaut0.github.io/m2/repository")
     }
-}
 
-pluginManagement {
     plugins {
-        id("nu.studer.jooq") version "6.0.1"
-        id("com.bmuschko.docker-remote-api") version "7.1.0"
+        kotlin("jvm") version "1.9.22"
+        kotlin("plugin.serialization") version "1.9.22"
     }
 }
+
+plugins {
+    id("dev.twarner.settings") version "1.0.2"
+}
+
+include("dbmigrate", "common", "service", "web")
+rootProject.name = "vote"
+
+enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")

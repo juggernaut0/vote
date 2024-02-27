@@ -3,8 +3,9 @@ package vote.services
 import org.slf4j.LoggerFactory
 import vote.api.v1.*
 import java.lang.RuntimeException
+import javax.inject.Inject
 
-class PollValidator {
+class PollValidator @Inject constructor() {
     fun validate(poll: PollCreateRequest): List<String> {
         return Validator(poll)
                 .verify("Title must not be empty") { it.title.isNotBlank() }

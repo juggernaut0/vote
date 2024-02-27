@@ -1,11 +1,9 @@
 package vote.db.query
 
-import kotlinx.coroutines.future.await
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import org.jooq.JSONB
 import vote.api.v1.Question
-import vote.db.insertAsync
 import vote.db.jooq.Tables.POLL
 import vote.db.jooq.Tables.RESPONSE
 import vote.db.jooq.tables.records.PollRecord
@@ -25,16 +23,14 @@ class PollQueries @Inject constructor(private val json: Json) {
                     this.createdBy = createdBy
                     this.createdDt = OffsetDateTime.now()
                 }
-                .insertAsync()
-                .await()
+                .insert()
         id
     }
 
     fun getPoll(id: UUID) = queryOf { dsl ->
         dsl.selectFrom(POLL)
                 .where(POLL.ID.eq(id))
-                .fetchAsync()
-                .await()
+                .fetch()
                 .firstOrNull()
     }
 
@@ -43,8 +39,7 @@ class PollQueries @Inject constructor(private val json: Json) {
                 .where(POLL.CREATED_BY.eq(createdBy))
                 .orderBy(POLL.CREATED_DT.desc())
                 .limit(50)
-                .fetchAsync()
-                .await()
+                .fetch()
     }
 
     fun getRespondedPolls(voterId: UUID): Query<List<PollRecord>> = queryOf { dsl ->
@@ -52,8 +47,7 @@ class PollQueries @Inject constructor(private val json: Json) {
                 .where(RESPONSE.VOTER_ID.eq(voterId))
                 .orderBy(POLL.CREATED_DT.desc())
                 .limit(50)
-                .fetchAsync()
-                .await()
+                .fetch()
                 .map { it.into(POLL) }
     }
 }

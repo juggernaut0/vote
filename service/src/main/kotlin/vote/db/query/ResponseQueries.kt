@@ -1,12 +1,10 @@
 package vote.db.query
 
-import kotlinx.coroutines.future.await
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import org.jooq.JSONB
 import vote.api.v1.PollResponse
 import vote.api.v1.Response
-import vote.db.insertAsync
 import vote.db.jooq.Tables.RESPONSE
 import vote.db.jooq.tables.records.ResponseRecord
 import java.util.*
@@ -23,8 +21,7 @@ class ResponseQueries @Inject constructor(private val json: Json) {
                     this.version = 1
                     this.responses = JSONB.valueOf(json.encodeToString(ListSerializer(Response.serializer()), resp.responses))
                 }
-                .insertAsync()
-                .await()
+                .insert()
         id
     }
 
@@ -33,31 +30,27 @@ class ResponseQueries @Inject constructor(private val json: Json) {
                 .set(RESPONSE.VERSION, 1)
                 .set(RESPONSE.RESPONSES, JSONB.valueOf(json.encodeToString(ListSerializer(Response.serializer()), resp.responses)))
                 .where(RESPONSE.ID.eq(respId))
-                .executeAsync()
-                .await()
+                .execute()
     }
 
     fun getAllActiveResponses(pollId: UUID) = queryOf { dsl ->
         dsl.selectFrom(RESPONSE)
                 .where(RESPONSE.POLL_ID.eq(pollId))
                 .and(RESPONSE.ACTIVE.eq(true))
-                .fetchAsync()
-                .await()
+                .fetch()
     }
 
     fun getAllResponsesWithUsers(pollId: UUID) = queryOf<List<ResponseRecord>> { dsl ->
         dsl.selectFrom(RESPONSE)
                 .where(RESPONSE.POLL_ID.eq(pollId))
-                .fetchAsync()
-                .await()
+                .fetch()
     }
 
     fun getResponse(pollId: UUID, voterId: UUID) = queryOf { dsl ->
         dsl.selectFrom(RESPONSE)
                 .where(RESPONSE.POLL_ID.eq(pollId))
                 .and(RESPONSE.VOTER_ID.eq(voterId))
-                .fetchAsync()
-                .await()
+                .fetch()
                 .firstOrNull()
     }
 
@@ -66,8 +59,7 @@ class ResponseQueries @Inject constructor(private val json: Json) {
                 .set(RESPONSE.ACTIVE, false)
                 .where(RESPONSE.ID.eq(responseId))
                 .and(RESPONSE.POLL_ID.eq(pollId)) // validation check
-                .executeAsync()
-                .await()
+                .execute()
         rowsChanged > 0
     }
 }

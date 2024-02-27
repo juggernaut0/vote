@@ -3,10 +3,11 @@ package vote.services
 import org.slf4j.LoggerFactory
 import vote.api.v1.*
 import java.util.*
+import javax.inject.Inject
 import kotlin.math.roundToInt
 import kotlin.random.Random
 
-class ResultsCalculator {
+class ResultsCalculator @Inject constructor() {
     fun calculateResults(poll: Poll, responses: List<PollResponse>): PollResults {
         val results = mutableListOf<Result>()
         for ((i, q) in poll.questions.withIndex()) {
