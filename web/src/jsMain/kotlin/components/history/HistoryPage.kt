@@ -55,7 +55,7 @@ class HistoryPage(private val service: VoteService) : Component() {
                 ul {
                     for (phi in responded) {
                         li {
-                            a(href = "/?results=${phi.id}") { +phi.title }
+                            a(href = "/vote/?results=${phi.id}") { +phi.title }
                         }
                     }
                 }

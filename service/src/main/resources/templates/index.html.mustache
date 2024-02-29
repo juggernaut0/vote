@@ -1,8 +1,16 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" prefix="og: https://ogp.me/ns#">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+{{#og}}
+    <meta property="og:title" content="{{title}}">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{url}}">
+    <meta property="og:site_name" content="SoVote">
+    <meta property="og:description" content="{{description}}">
+    <!--<meta property="og:image" content="https://developer.mend.io/assets/mend-logo.svg">-->
+{{/og}}
 
     <title>SoVote</title>
 
