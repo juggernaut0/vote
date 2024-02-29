@@ -21,6 +21,8 @@ dependencies {
     implementation(libs.hikari)
     implementation(libs.config4k)
 
+    implementation("com.samskivert:jmustache:1.16")
+
     testImplementation(kotlin("test"))
 }
 

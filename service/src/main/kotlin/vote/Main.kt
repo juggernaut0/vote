@@ -12,7 +12,9 @@ import vote.config.VoteConfig
 import vote.db.DbMigration.runMigrations
 import vote.inject.DaggerVoteInjector
 import vote.inject.VoteModule
+import vote.resources.IndexResource
 import vote.resources.VoteResource
+import vote.resources.registerResource
 import javax.inject.Inject
 import javax.inject.Named
 
@@ -25,6 +27,7 @@ fun main() {
 
 class VoteApp @Inject constructor(
     private val config: VoteConfig,
+    private val indexResource: IndexResource,
     private val voteResource: VoteResource,
     @Named("authClient") private val authClient: BlockingApiClient,
 ) {
@@ -46,8 +49,9 @@ class VoteApp @Inject constructor(
                     staticFiles.hostedPath = "/vote"
                 }
             }
+            .registerResource(voteResource)
+            .registerResource(indexResource)
             .also {
-                voteResource.register(it)
                 if (config.auth.mock) {
                     MockAuthHandler().registerRoutes(it)
                 }
